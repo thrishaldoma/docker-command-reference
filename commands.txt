@@ -1,0 +1,569 @@
+docker - Manage containers, images, networks, volumes, and Docker services
+docker agent - Docker AI Agent Runner
+docker agent alias - Manage aliases
+docker agent alias add - Add a new alias
+docker agent alias list - List all registered aliases
+docker agent alias remove - Remove a registered alias
+docker agent board - Orchestrate agents on a Kanban board
+docker agent debug - Debug tools
+docker agent debug auth - Print Docker authentication information
+docker agent debug config - Print the canonical form of an agent's configuration file
+docker agent debug oauth - OAuth token management
+docker agent debug oauth list - List all stored OAuth tokens
+docker agent debug oauth login - Perform OAuth login for a remote MCP server
+docker agent debug oauth remove - Remove a stored OAuth token
+docker agent debug skills - Debug the skills of an agent
+docker agent debug title - Generate a session title from a question
+docker agent debug toolsets - Debug the toolsets of an agent
+docker agent doctor - Diagnose model and credential setup
+docker agent eval - Run evaluations for an agent
+docker agent getting-started - Learn docker agent with a hands-on interactive tour
+docker agent models - List available models
+docker agent models list - List available models
+docker agent new - Create a new agent configuration
+docker agent plans - Manage shared and session plans
+docker agent plans create - Create a new shared plan
+docker agent plans delete - Delete a shared plan
+docker agent plans export - Write a plan's content to a file
+docker agent plans get - Print a plan's content and metadata
+docker agent plans list - List plans
+docker agent plans status - Set the status of an existing shared plan
+docker agent plans update - Replace the content of an existing shared plan
+docker agent run - Run an agent
+docker agent sandbox - Manage docker-agent sandbox settings
+docker agent sandbox allow - Add host(s) to the persistent sandbox network allowlist
+docker agent sandbox deny - Remove a host from the persistent sandbox network allowlist
+docker agent sandbox list - List the persistent sandbox network allowlist
+docker agent serve - Start an agent as a server
+docker agent serve a2a - Start an agent as an A2A (Agent-to-Agent) server
+docker agent serve acp - Start an agent as an ACP (Agent Client Protocol) server
+docker agent serve api - Start the API server
+docker agent serve chat - Start an agent as an OpenAI-compatible chat completions server
+docker agent serve mcp - Start an agent as an MCP (Model Context Protocol) server
+docker agent sessions - Inspect recorded sessions
+docker agent sessions diff - Compare the behaviour of two recorded sessions
+docker agent setup - Interactively set up a model (built-in provider, local, custom endpoint, or Claude Code)
+docker agent share - Share agents
+docker agent share pull - Pull an agent from an OCI registry
+docker agent share push - Push an agent to an OCI registry
+docker agent toolsets - List built-in toolset types
+docker agent version - Print the version information
+docker ai - Docker AI Agent - Ask Gordon
+docker ai version - Show the version information
+docker attach - Attach local standard input, output, and error streams to a running container
+docker bake - Build from a file
+docker build - Build an image from a Dockerfile
+docker builder - Manage builds
+docker builder bake - Build from a file
+docker builder build - Start a build
+docker builder create - Create a new builder instance
+docker builder dap - Start debug adapter protocol compatible debugger
+docker builder dap build - Start a build
+docker builder dial-stdio - Proxy current stdio streams to builder instance
+docker builder du - Disk usage
+docker builder history - Commands to work on build records
+docker builder history export - Export build records into Docker Desktop bundle
+docker builder history import - Import build records into Docker Desktop
+docker builder history inspect - Inspect a build record
+docker builder history inspect attachment - Inspect a build record attachment
+docker builder history logs - Print the logs of a build record
+docker builder history ls - List build records
+docker builder history open - Open a build record in Docker Desktop
+docker builder history rm - Remove build records
+docker builder history trace - Show the OpenTelemetry trace of a build record
+docker builder imagetools - Commands to work on images in registry
+docker builder imagetools create - Create a new image based on source images
+docker builder imagetools inspect - Show details of an image in the registry
+docker builder inspect - Inspect current builder instance
+docker builder ls - List builder instances
+docker builder policy - Commands for working with build policies
+docker builder policy eval - Evaluate policy for a source
+docker builder policy test - Run policy tests
+docker builder prune - Remove build cache
+docker builder rm - Remove one or more builder instances
+docker builder stop - Stop builder instance
+docker builder use - Set the current builder instance
+docker builder version - Show buildx version information
+docker buildx - Docker Buildx
+docker buildx b - Build an image from a Dockerfile
+docker buildx bake - Build from a file
+docker buildx build - Start a build
+docker buildx create - Create a new builder instance
+docker buildx dap - Start debug adapter protocol compatible debugger
+docker buildx dap build - Start a build
+docker buildx dial-stdio - Proxy current stdio streams to builder instance
+docker buildx du - Disk usage
+docker buildx f - Build from a file
+docker buildx history - Commands to work on build records
+docker buildx history export - Export build records into Docker Desktop bundle
+docker buildx history import - Import build records into Docker Desktop
+docker buildx history inspect - Inspect a build record
+docker buildx history inspect attachment - Inspect a build record attachment
+docker buildx history logs - Print the logs of a build record
+docker buildx history ls - List build records
+docker buildx history open - Open a build record in Docker Desktop
+docker buildx history rm - Remove build records
+docker buildx history trace - Show the OpenTelemetry trace of a build record
+docker buildx imagetools - Commands to work on images in registry
+docker buildx imagetools create - Create a new image based on source images
+docker buildx imagetools inspect - Show details of an image in the registry
+docker buildx inspect - Inspect current builder instance
+docker buildx ls - List builder instances
+docker buildx policy - Commands for working with build policies
+docker buildx policy eval - Evaluate policy for a source
+docker buildx policy test - Run policy tests
+docker buildx prune - Remove build cache
+docker buildx rm - Remove one or more builder instances
+docker buildx stop - Stop builder instance
+docker buildx use - Set the current builder instance
+docker buildx version - Show buildx version information
+docker checkpoint - Manage checkpoints
+docker checkpoint create - Create a checkpoint from a running container
+docker checkpoint list - List checkpoints for a container
+docker checkpoint ls - List checkpoints for a container
+docker checkpoint remove - Remove a checkpoint
+docker checkpoint rm - Remove a checkpoint
+docker commit - Create a new image from a container's changes
+docker compose - Docker Compose
+docker compose attach - Attach local standard input, output, and error streams to a service's running container
+docker compose bridge - Convert compose files into another model
+docker compose bridge convert - Convert compose files to Kubernetes manifests, Helm charts, or another model
+docker compose bridge transformations - Manage transformation images
+docker compose bridge transformations create - Create a new transformation
+docker compose bridge transformations list - List available transformations
+docker compose bridge transformations ls - List available transformations
+docker compose build - Build or rebuild services
+docker compose commit - Create a new image from a service container's changes
+docker compose config - Parse, resolve and render compose file in canonical format
+docker compose cp - Copy files/folders between a service container and the local filesystem
+docker compose create - Creates containers for a service
+docker compose down - Stop and remove containers, networks
+docker compose events - Receive real time events from containers
+docker compose exec - Execute a command in a running container
+docker compose export - Export a service container's filesystem as a tar archive
+docker compose images - List images used by the created containers
+docker compose kill - Force stop service containers
+docker compose logs - View output from containers
+docker compose ls - List running compose projects
+docker compose pause - Pause services
+docker compose port - Print the public port for a port binding
+docker compose ps - List containers
+docker compose publish - Publish compose application
+docker compose pull - Pull service images
+docker compose push - Push service images
+docker compose restart - Restart service containers
+docker compose rm - Removes stopped service containers
+docker compose run - Run a one-off command on a service
+docker compose scale - Scale services
+docker compose start - Start services
+docker compose stats - Display a live stream of container(s) resource usage statistics
+docker compose stop - Stop services
+docker compose top - Display the running processes
+docker compose unpause - Unpause services
+docker compose up - Create and start containers
+docker compose version - Show the Docker Compose version information
+docker compose volumes - List volumes
+docker compose wait - Block until containers of all (or specified) services stop.
+docker compose watch - Watch build context for service and rebuild/refresh containers when files are updated
+docker config - Manage Swarm configs
+docker config create - Create a config from a file or STDIN
+docker config inspect - Display detailed information on one or more configs
+docker config list - List configs
+docker config ls - List configs
+docker config remove - Remove one or more configs
+docker config rm - Remove one or more configs
+docker container - Manage containers
+docker container attach - Attach local standard input, output, and error streams to a running container
+docker container commit - Create a new image from a container's changes
+docker container cp - Copy files/folders between a container and the local filesystem
+docker container create - Create a new container
+docker container diff - Inspect changes to files or directories on a container's filesystem
+docker container exec - Execute a command in a running container
+docker container export - Export a container's filesystem as a tar archive
+docker container inspect - Display detailed information on one or more containers
+docker container kill - Kill one or more running containers
+docker container list - List containers
+docker container logs - Fetch the logs of a container
+docker container ls - List containers
+docker container pause - Pause all processes within one or more containers
+docker container port - List port mappings or a specific mapping for the container
+docker container prune - Remove all stopped containers
+docker container ps - List containers
+docker container remove - Remove one or more containers
+docker container rename - Rename a container
+docker container restart - Restart one or more containers
+docker container rm - Remove one or more containers
+docker container run - Create and run a new container from an image
+docker container start - Start one or more stopped containers
+docker container stats - Display a live stream of container(s) resource usage statistics
+docker container stop - Stop one or more running containers
+docker container top - Display the running processes of a container
+docker container unpause - Unpause all processes within one or more containers
+docker container update - Update configuration of one or more containers
+docker container wait - Block until one or more containers stop, then print their exit codes
+docker context - Manage contexts
+docker context create - Create a context
+docker context export - Export a context to a tar archive FILE or a tar stream on STDOUT.
+docker context import - Import a context from a tar or zip file
+docker context inspect - Display detailed information on one or more contexts
+docker context list - List contexts
+docker context ls - List contexts
+docker context remove - Remove one or more contexts
+docker context rm - Remove one or more contexts
+docker context show - Print the name of the current context
+docker context update - Update a context
+docker context use - Set the default docker context
+docker cp - Copy files/folders between a container and the local filesystem
+docker create - Create a new container
+docker debug - Get a shell into any image or container
+docker desktop - Docker Desktop commands
+docker desktop diagnose - Diagnose Docker Desktop
+docker desktop disable - Disable a feature
+docker desktop disable model-runner - Disable Docker Model Runner
+docker desktop enable - Enable a feature
+docker desktop enable model-runner - Manage Docker Model Runner settings
+docker desktop kubernetes - Manage Kubernetes
+docker desktop kubernetes images - List Kubernetes images used by Docker Desktop
+docker desktop kubernetes reset-cluster - Reset the Kubernetes cluster managed by Docker Desktop
+docker desktop kubernetes status - Get the status of the Kubernetes cluster managed by Docker Desktop
+docker desktop logs - Print log entries
+docker desktop restart - Restart Docker Desktop
+docker desktop start - Start Docker Desktop
+docker desktop status - Show the status of the Docker Desktop engines
+docker desktop stop - Stop Docker Desktop
+docker desktop update - Manage Docker Desktop updates
+docker desktop version - Show the Docker Desktop CLI plugin version information
+docker dhi - CLI for managing Docker Hardened Images
+docker dhi a - View attestations for Docker Hardened Images
+docker dhi attest - View attestations for Docker Hardened Images
+docker dhi attestation - View attestations for Docker Hardened Images
+docker dhi attestation get - Get attestation for a Docker Hardened Image
+docker dhi attestation list - List attestations for a Docker Hardened Image
+docker dhi attestation sbom - Display the SPDX SBOM for a Docker Hardened Image
+docker dhi auth - Authenticate with Docker Hub
+docker dhi auth apk - Create authentication details for DHI APK repositories
+docker dhi auth deb - Create authentication details for DHI DEB repositories
+docker dhi c - Manage Docker Hardened Images customizations
+docker dhi catalog - Browse the Docker Hardened Images catalog
+docker dhi catalog get - Get details of a Docker Hardened Image
+docker dhi catalog list - List available Docker Hardened Images
+docker dhi custo - Manage Docker Hardened Images customizations
+docker dhi customization - Manage Docker Hardened Images customizations
+docker dhi customization build - Manage customization builds
+docker dhi customization build get - Get details of a build
+docker dhi customization build list - List builds of a customization
+docker dhi customization build logs - Get logs of a build
+docker dhi customization create - Create a new customization from YAML file
+docker dhi customization delete - Delete one or more customizations
+docker dhi customization edit - Edit an existing customization from YAML file
+docker dhi customization get - Get details of a specific customization
+docker dhi customization list - List all customizations
+docker dhi customization prepare - Prepare a new customization YAML file from a DHI base image tag
+docker dhi customization update - Edit an existing customization from YAML file
+docker dhi mirror - Mirror Docker Hardened Images to your organization
+docker dhi mirror list - List all mirrored Docker Hardened Images
+docker dhi mirror start - Start mirroring Docker Hardened Images
+docker dhi mirror stop - Stop mirroring one or more Docker Hardened Images
+docker diff - Inspect changes to files or directories on a container's filesystem
+docker events - Get real time events from the server
+docker exec - Execute a command in a running container
+docker export - Export a container's filesystem as a tar archive
+docker extension - Manages Docker extensions
+docker extension dev - Extension development helpers
+docker extension dev debug - Set the debug mode for an extension
+docker extension dev remove - Reset the source and disables the debug mode for the extension UI
+docker extension dev reset - Reset the source and disables the debug mode for the extension UI
+docker extension dev ui-source - Set a new source for the extension UI
+docker extension init - Create a new Docker Extension based on a template.
+docker extension install - Install a Docker extension with the specified image
+docker extension list - List installed Docker extensions
+docker extension ls - List installed Docker extensions
+docker extension remove - Remove a Docker extension
+docker extension rm - Remove a Docker extension
+docker extension share - Generate a link to share the extension.
+docker extension uninstall - Remove a Docker extension
+docker extension update - Remove and re-install a Docker extension
+docker extension validate - Validate an extension image or metadata file
+docker extension version - Print the client and server versions
+docker history - Show the history of an image
+docker image - Manage images
+docker image build - Build an image from a Dockerfile
+docker image history - Show the history of an image
+docker image import - Import the contents from a tarball to create a filesystem image
+docker image inspect - Display detailed information on one or more images
+docker image list - List images
+docker image load - Load an image from a tar archive or STDIN
+docker image ls - List images
+docker image prune - Remove unused images
+docker image pull - Download an image from a registry
+docker image push - Upload an image to a registry
+docker image remove - Remove one or more images
+docker image rm - Remove one or more images
+docker image save - Save one or more images to a tar archive (streamed to STDOUT by default)
+docker image tag - Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE
+docker images - List images
+docker import - Import the contents from a tarball to create a filesystem image
+docker info - Display system-wide information
+docker init - Creates Docker-related starter files for your project
+docker inspect - Return low-level information on Docker objects
+docker kill - Kill one or more running containers
+docker load - Load an image from a tar archive or STDIN
+docker login - Authenticate to a registry
+docker logout - Log out from a registry
+docker logs - Fetch the logs of a container
+docker manifest - Manage Docker image manifests and manifest lists
+docker manifest annotate - Add additional information to a local image manifest
+docker manifest create - Create a local manifest list for annotating and pushing to a registry
+docker manifest inspect - Display an image manifest, or manifest list
+docker manifest push - Push a manifest list to a repository
+docker manifest rm - Delete one or more manifest lists from local storage
+docker mcp - Docker MCP Plugin
+docker mcp catalog - Manage MCP server OCI catalogs
+docker mcp catalog create - Create a new catalog from server references, a profile, legacy catalog, or community registry
+docker mcp catalog list - List catalogs
+docker mcp catalog pull - Pull and import an MCP server catalog from an OCI registry
+docker mcp catalog push - Push a catalog to an OCI registry
+docker mcp catalog remove - Remove a catalog
+docker mcp catalog server - Manage servers in catalogs
+docker mcp catalog server add - Add MCP servers to a catalog
+docker mcp catalog server inspect - Inspect a server in a catalog
+docker mcp catalog server ls - List servers in a catalog
+docker mcp catalog server remove - Remove MCP servers from a catalog
+docker mcp catalog show - Show a catalog
+docker mcp catalog tag - Create a tagged copy of a catalog
+docker mcp client - Manage MCP clients
+docker mcp client connect - Connect the Docker MCP Toolkit to a client. Supported clients: claude-code claude-desktop cline codex continue crush cursor gemini goose gordon kiro lmstudio opencode sema4 vscode zed
+docker mcp client disconnect - Disconnect the Docker MCP Toolkit from a client. Supported clients: claude-code claude-desktop cline codex continue crush cursor gemini goose gordon kiro lmstudio opencode sema4 vscode zed
+docker mcp client ls - List client configurations
+docker mcp feature - Manage experimental features
+docker mcp feature disable - Disable an experimental feature
+docker mcp feature enable - Enable an experimental feature
+docker mcp feature ls - List all available features and their status
+docker mcp gateway - Manage the MCP Server gateway
+docker mcp gateway run - Run the gateway
+docker mcp oauth - Manage OAuth app authorizations
+docker mcp oauth authorize - Authorize the specified OAuth app.
+docker mcp oauth ls - List available OAuth apps.
+docker mcp oauth revoke - Revoke the specified OAuth app.
+docker mcp profile - Manage profiles
+docker mcp profile config - Update the configuration of a profile
+docker mcp profile create - Create a new profile of MCP servers
+docker mcp profile export - Export profile to file
+docker mcp profile import - Import profile from file
+docker mcp profile list - List profiles
+docker mcp profile pull - Pull profile from OCI registry
+docker mcp profile push - Push profile to OCI registry
+docker mcp profile remove - Remove a profile
+docker mcp profile server - Manage servers in profiles
+docker mcp profile server add - Add MCP servers to a profile
+docker mcp profile server ls - List servers across profiles
+docker mcp profile server remove - Remove MCP servers from a profile
+docker mcp profile show - Show profile
+docker mcp profile tools - Manage tool allowlist for servers in a profile
+docker mcp secret - Manage secrets in the local OS Keychain
+docker mcp secret ls - List all secrets from the local OS Keychain as well as any active Secrets Engine provider
+docker mcp secret rm - Remove secrets from the local OS Keychain
+docker mcp secret set - Set a secret in the local OS Keychain
+docker mcp server - Manage servers
+docker mcp server init - Initialize a new MCP server project
+docker mcp template - Manage starter profile templates
+docker mcp template list - List available starter templates
+docker mcp template use - Create a profile from a starter template
+docker mcp tools - Manage tools
+docker mcp tools call - Call a tool
+docker mcp tools count - Count tools
+docker mcp tools inspect - Inspect a tool
+docker mcp tools ls - List tools
+docker mcp version - Show the version information
+docker model - Docker Model Runner
+docker model bench - Benchmark a model's performance at different concurrency levels
+docker model context - Manage Docker Model Runner contexts
+docker model context create - Create a named Model Runner context
+docker model context inspect - Display detailed information about one or more contexts
+docker model context list - List Model Runner contexts
+docker model context ls - List Model Runner contexts
+docker model context remove - Remove one or more Model Runner contexts
+docker model context rm - Remove one or more Model Runner contexts
+docker model context use - Set the active Model Runner context
+docker model df - Show Docker Model Runner disk usage
+docker model gateway - Run an OpenAI-compatible LLM gateway
+docker model inspect - Display detailed information on one model
+docker model install-runner - Install Docker Model Runner (Docker Engine only)
+docker model launch - Launch an app configured to use Docker Model Runner
+docker model list - List the models pulled to your local environment
+docker model logs - Fetch the Docker Model Runner logs
+docker model ls - List the models pulled to your local environment
+docker model package - Package a model into a Docker Model OCI artifact
+docker model ps - List running models
+docker model pull - Pull a model from Docker Hub or HuggingFace to your local environment
+docker model purge - Remove all models
+docker model push - Push a model to Docker Hub or Hugging Face
+docker model reinstall-runner - Reinstall Docker Model Runner (Docker Engine only)
+docker model requests - Fetch requests+responses from Docker Model Runner
+docker model restart-runner - Restart Docker Model Runner (Docker Engine only)
+docker model rm - Remove local models downloaded from Docker Hub
+docker model run - Run a model and interact with it using a submitted prompt or chat mode
+docker model search - Search for models on Docker Hub and HuggingFace
+docker model show - Show information for a model
+docker model skills - Install Docker Model Runner skills for AI coding assistants
+docker model start-runner - Start Docker Model Runner (Docker Engine only)
+docker model status - Check if the Docker Model Runner is running
+docker model stop - Unload running models
+docker model stop-runner - Stop Docker Model Runner (Docker Engine only)
+docker model tag - Tag a model
+docker model uninstall-runner - Uninstall Docker Model Runner (Docker Engine only)
+docker model unload - Unload running models
+docker model version - Show the Docker Model Runner version
+docker network - Manage networks
+docker network connect - Connect a container to a network
+docker network create - Create a network
+docker network disconnect - Disconnect a container from a network
+docker network inspect - Display detailed information on one or more networks
+docker network list - List networks
+docker network ls - List networks
+docker network prune - Remove all unused networks
+docker network remove - Remove one or more networks
+docker network rm - Remove one or more networks
+docker node - Manage Swarm nodes
+docker node demote - Demote one or more nodes from manager in the swarm
+docker node inspect - Display detailed information on one or more nodes
+docker node list - List nodes in the swarm
+docker node ls - List nodes in the swarm
+docker node promote - Promote one or more nodes to manager in the swarm
+docker node ps - List tasks running on one or more nodes, defaults to current node
+docker node remove - Remove one or more nodes from the swarm
+docker node rm - Remove one or more nodes from the swarm
+docker node update - Update a node
+docker offload - Docker Offload
+docker offload start - Start a Docker Offload session
+docker offload status - Show the status of the Docker Offload connection
+docker offload stop - Stop a Docker Offload session
+docker offload version - Prints the version
+docker pass - Docker Pass Secrets Manager Plugin (beta)
+docker pass get - Get a secret from a keystore.
+docker pass ls - List all secrets from local keychain.
+docker pass plugins - Manage secrets engine plugins.
+docker pass plugins disable - Disable a secrets engine plugin.
+docker pass plugins enable - Enable a secrets engine plugin.
+docker pass plugins ls - List registered secrets engine plugins.
+docker pass rm - Remove secrets from local keychain.
+docker pass run - Run a command with `se://` environment references resolved.
+docker pass set - Set a secret
+docker pause - Pause all processes within one or more containers
+docker plugin - Manage plugins
+docker plugin create - Create a plugin from a rootfs and configuration. Plugin data directory must contain config.json and rootfs directory.
+docker plugin disable - Disable a plugin
+docker plugin enable - Enable a plugin
+docker plugin inspect - Display detailed information on one or more plugins
+docker plugin install - Install a plugin
+docker plugin list - List plugins
+docker plugin ls - List plugins
+docker plugin push - Push a plugin to a registry
+docker plugin remove - Remove one or more plugins
+docker plugin rm - Remove one or more plugins
+docker plugin set - Change settings for a plugin
+docker plugin upgrade - Upgrade an existing plugin
+docker port - List port mappings or a specific mapping for the container
+docker ps - List containers
+docker pull - Download an image from a registry
+docker push - Upload an image to a registry
+docker rename - Rename a container
+docker restart - Restart one or more containers
+docker rm - Remove one or more containers
+docker rmi - Remove one or more images
+docker run - Create and run a new container from an image
+docker save - Save one or more images to a tar archive (streamed to STDOUT by default)
+docker scout - Docker Scout
+docker scout attestation - Manage attestations on images
+docker scout attestation add - Add attestation to image
+docker scout attestation get - Get attestation for image
+docker scout attestation list - List attestations for image
+docker scout cache - Manage Docker Scout cache and temporary files
+docker scout cache df - Show Docker Scout disk usage
+docker scout cache prune - Remove temporary or cached data
+docker scout compare - Compare two images and display differences (experimental)
+docker scout config - Manage Docker Scout configuration
+docker scout cves - Display CVEs identified in a software artifact
+docker scout enroll - Enroll an organization with Docker Scout
+docker scout environment - Manage environments (experimental)
+docker scout help - Display information about the available commands
+docker scout integration - Commands to list, configure, and delete Docker Scout integrations
+docker scout integration configure - Configure or update a new integration configuration
+docker scout integration delete - Delete a new integration configuration
+docker scout integration list - List integrations which can be installed
+docker scout policy - Evaluate local Rego policies against an image and display the results (experimental)
+docker scout policy publish - Package local Rego policies into an OCI bundle and push it to a registry (experimental)
+docker scout push - Push an image or image index to Docker Scout
+docker scout quickview - Quick overview of an image
+docker scout recommendations - Display available base image updates and remediation recommendations
+docker scout repo - Commands to list, enable, and disable Docker Scout on repositories
+docker scout repo disable - Disable Docker Scout
+docker scout repo enable - Enable Docker Scout
+docker scout repo list - List Docker Scout repositories
+docker scout version - Show Docker Scout version information
+docker scout vex - Manage VEX attestations on images
+docker scout vex get - Get VEX attestation for image
+docker scout watch - Watch repositories in a registry and push images and indexes to Docker Scout
+docker search - Search Docker Hub for images
+docker secret - Manage Swarm secrets
+docker secret create - Create a secret from a file or STDIN as content
+docker secret inspect - Display detailed information on one or more secrets
+docker secret list - List secrets
+docker secret ls - List secrets
+docker secret remove - Remove one or more secrets
+docker secret rm - Remove one or more secrets
+docker service - Manage Swarm services
+docker service create - Create a new service
+docker service inspect - Display detailed information on one or more services
+docker service list - List services
+docker service logs - Fetch the logs of a service or task
+docker service ls - List services
+docker service ps - List the tasks of one or more services
+docker service remove - Remove one or more services
+docker service rm - Remove one or more services
+docker service rollback - Revert changes to a service's configuration
+docker service scale - Scale one or multiple replicated services
+docker service update - Update a service
+docker stack - Manage Swarm stacks
+docker stack config - Outputs the final config file, after doing merges and interpolations
+docker stack deploy - Deploy a new stack or update an existing stack
+docker stack down - Remove one or more stacks
+docker stack list - List stacks
+docker stack ls - List stacks
+docker stack ps - List the tasks in the stack
+docker stack remove - Remove one or more stacks
+docker stack rm - Remove one or more stacks
+docker stack services - List the services in the stack
+docker stack up - Deploy a new stack or update an existing stack
+docker start - Start one or more stopped containers
+docker stats - Display a live stream of container(s) resource usage statistics
+docker stop - Stop one or more running containers
+docker swarm - Manage Swarm
+docker swarm ca - Display and rotate the root CA
+docker swarm init - Initialize a swarm
+docker swarm join - Join a swarm as a node and/or manager
+docker swarm join-token - Manage join tokens
+docker swarm leave - Leave the swarm
+docker swarm unlock - Unlock swarm
+docker swarm unlock-key - Manage the unlock key
+docker swarm update - Update the swarm
+docker system - Manage Docker
+docker system df - Show docker disk usage
+docker system events - Get real time events from the server
+docker system info - Display system-wide information
+docker system prune - Remove unused data
+docker tag - Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE
+docker top - Display the running processes of a container
+docker unpause - Unpause all processes within one or more containers
+docker update - Update configuration of one or more containers
+docker version - Show the Docker version information
+docker volume - Manage volumes
+docker volume create - Create a volume
+docker volume inspect - Display detailed information on one or more volumes
+docker volume list - List volumes
+docker volume ls - List volumes
+docker volume prune - Remove unused local volumes
+docker volume remove - Remove one or more volumes
+docker volume rm - Remove one or more volumes
+docker volume update - Update a volume (cluster volumes only)
+docker wait - Block until one or more containers stop, then print their exit codes
