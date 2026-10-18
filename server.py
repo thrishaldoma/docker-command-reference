@@ -6,13 +6,23 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parent
-LINES = (ROOT / "commands.txt").read_text(encoding="utf-8").splitlines()
+COMMANDS = (ROOT / "commands.txt").read_text(encoding="utf-8").splitlines()
+FLAGS = (ROOT / "flags.txt").read_text(encoding="utf-8").splitlines()
+EXAMPLES = (ROOT / "examples.txt").read_text(encoding="utf-8").splitlines()
+# Put practical examples first so common flags are immediately discoverable.
+LINES = list(dict.fromkeys(EXAMPLES + sorted(COMMANDS + FLAGS)))
 CATALOG = json.loads((ROOT / "catalog.json").read_text())
-HELP = """curl localhost:8080 - List all commands
+HELP = """curl localhost:8080 - List practical examples, commands, and flag descriptions
+curl localhost:8080/examples - Show practical commands with values and combined flags
+curl localhost:8080/flags - Show short and long option reference templates
+curl localhost:8080/commands - Show just command names and descriptions
+curl localhost:8080/run - Show docker run examples, commands, and flags
+curl localhost:8080/examples/run - Show only docker run examples
+curl localhost:8080/flags/run - Show only docker run flag templates
 curl localhost:8080/compose - List Docker Compose commands
 curl localhost:8080/buildx - List Docker Buildx commands
 curl localhost:8080/container - List container commands
-curl localhost:8080/compose/up - Show one command
+curl localhost:8080/compose/up - Show a command with its examples and flags
 curl 'localhost:8080/search?q=volume' - Search commands and descriptions
 curl localhost:8080/meta - Show catalog version and scope
 curl localhost:8080/healthz - Check service health
@@ -47,16 +57,22 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_text(200, HELP)
         if path == "meta":
             return self.send_text(200, json.dumps(CATALOG, indent=2) + "\n")
+        source = LINES
+        parts = path.split("/", 1)
+        collections = {"commands": COMMANDS, "flags": FLAGS, "examples": EXAMPLES}
+        if parts[0] in collections:
+            source = collections[parts[0]]
+            path = parts[1] if len(parts) == 2 else ""
         if path == "search":
             query = parse_qs(url.query).get("q", [""])[0].strip().lower()
             if not query:
                 return self.send_text(400, "Supply a search term: curl 'http://HOST:PORT/search?q=volume'\n")
-            lines = [line for line in LINES if query in line.lower()]
+            lines = [line for line in source if query in line.lower()]
         elif not path:
-            lines = LINES
+            lines = source
         else:
             prefix = "docker " + path.replace("/", " ")
-            lines = [line for line in LINES
+            lines = [line for line in source
                      if line.split(" - ", 1)[0] == prefix
                      or line.split(" - ", 1)[0].startswith(prefix + " ")]
         if not lines:

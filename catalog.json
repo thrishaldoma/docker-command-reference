@@ -1,10 +1,12 @@
 {
-  "generated_at": "2026-10-18T21:04:01.076338+00:00",
+  "generated_at": "2026-10-18T21:18:25.518469+00:00",
   "source": "Installed Docker CLI and plugins: recursive COMMAND --help",
   "docker_version": "Docker version 29.7.2, build a7dcaa6",
   "compose_version": "5.5.1",
   "buildx_version": "github.com/docker/buildx v0.36.1-desktop.1 83d819cf8237b52ef45a2a9857eeb83a7b10977f",
   "command_count": 569,
+  "flag_count": 3721,
+  "example_count": 157,
   "groups": [
     "docker agent",
     "docker ai",

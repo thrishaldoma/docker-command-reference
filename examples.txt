@@ -1,0 +1,157 @@
+docker run -d nginx - Run Nginx in detached mode (in the background) and print the container ID
+docker run -p 8080:80 nginx - Publish host port 8080 to container port 80; syntax is -p HOST_PORT:CONTAINER_PORT
+docker run -d -p 8080:80 --name web nginx - Run Nginx in the background as web and forward host port 8080 to container port 80
+docker run -it ubuntu bash - Open an interactive Bash session; -i keeps input open and -t allocates a terminal
+docker run --rm alpine echo hello - Run a temporary container and remove it automatically when it exits
+docker run --name web nginx - Assign the container the name web so later commands can refer to it
+docker run -p 127.0.0.1:8080:80 nginx - Publish container port 80 only on the host's loopback address at port 8080
+docker run -p 8080:80 -p 8443:443 myapp - Publish two TCP port mappings; the application must listen on ports 80 and 443 inside the container
+docker run -p 5353:53/udp dns-image - Forward UDP traffic from host port 5353 to container port 53
+docker run -P nginx - Publish all image-exposed ports on automatically assigned host ports; inspect mappings with docker port
+docker run --expose 8080 myapp - Declare container port 8080 without publishing it on the host
+docker run -e APP_ENV=production myapp - Set the APP_ENV environment variable inside the container
+docker run --env-file .env myapp - Load container environment variables from a local .env file
+docker run -e TZ=UTC -e LOG_LEVEL=info myapp - Set multiple environment variables by repeating -e
+docker run -v app-data:/data myapp - Mount the named volume app-data at /data; data persists after the container is removed
+docker run -v "$(pwd):/app" myapp - Bind mount the current host directory at /app in the container
+docker run -v "$(pwd)/config:/config:ro" myapp - Bind mount a host config directory as read-only
+docker run --mount type=volume,src=app-data,dst=/data myapp - Attach a named volume using explicit mount syntax
+docker run --mount "type=bind,src=$(pwd),dst=/app,readonly" myapp - Bind mount the current directory read-only using explicit mount syntax
+docker run --tmpfs /tmp:rw,size=64m myapp - Mount a temporary in-memory filesystem at /tmp with a 64 MB limit
+docker run -w /app myapp - Set the working directory inside the container to /app
+docker run -u 1000:1000 myapp - Run the container process as user ID 1000 and group ID 1000
+docker run --hostname app-host myapp - Set the container's hostname to app-host
+docker run --network app-net myapp - Connect the container to the existing app-net network
+docker run --network app-net --network-alias api myapp - Give the container the DNS alias api on app-net
+docker run --network none myapp - Disable the container's external networking
+docker run --network host myapp - Share the host network namespace; native on Linux and optional on supported Docker Desktop setups
+docker run --add-host service.local:host-gateway myapp - Resolve service.local inside the container to Docker's host-gateway address
+docker run --dns 1.1.1.1 myapp - Use the specified DNS server for the container
+docker run --restart unless-stopped -d myapp - Restart the container after exits and daemon restarts unless it was explicitly stopped
+docker run --restart on-failure:3 myapp - Retry up to three times if the container process exits with an error
+docker run --pull always myapp:latest - Always check the registry for the image before creating the container
+docker run --platform linux/amd64 myapp - Select an AMD64 image; another host architecture may require emulation
+docker run --entrypoint sh myapp - Replace the image's entrypoint with sh
+docker run --init myapp - Use a small init process to forward signals and reap child processes
+docker run -m 512m myapp - Limit container memory to 512 MB
+docker run --cpus 1.5 myapp - Limit the container to the equivalent of 1.5 CPUs
+docker run --cpuset-cpus 0,1 myapp - Restrict the container to CPU cores 0 and 1
+docker run --pids-limit 100 myapp - Limit the number of processes and threads in the container to 100
+docker run --read-only myapp - Make the container's root filesystem read-only; writable mounts are still allowed
+docker run --cap-drop ALL myapp - Remove all default Linux capabilities from the container
+docker run --security-opt no-new-privileges myapp - Prevent processes from gaining additional privileges through executable files
+docker run --gpus all cuda-image nvidia-smi - Expose all supported NVIDIA GPUs; requires configured GPU support on the host
+docker run --health-cmd 'curl -f http://localhost:8080/health || exit 1' --health-interval 30s myapp - Check application health every 30 seconds; the image must contain curl
+docker run --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 myapp - Rotate container logs across at most three 10 MB files
+docker run --label environment=dev myapp - Attach the metadata label environment=dev to the container
+docker ps -a - List every container, including stopped containers
+docker ps -q - Print only IDs of running containers
+docker ps -aq - Print only IDs of all containers, including stopped ones
+docker ps --filter status=exited - List only containers that have exited
+docker ps --filter name=web - Filter containers by names containing web
+docker ps --filter label=environment=dev - List containers carrying the environment=dev label
+docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' - Show container names, status, and port mappings in a custom table
+docker ps --no-trunc - Display full container IDs and untruncated command output
+docker logs -f web - Follow new log output from the web container
+docker logs --tail 100 web - Show only the last 100 log lines
+docker logs -f --tail 100 web - Show the last 100 lines and keep following new logs
+docker logs --since 1h --timestamps web - Show logs from the last hour with timestamps
+docker exec -it web sh - Open an interactive shell inside the running web container
+docker exec -u root -it web sh - Open a shell as root inside the running container
+docker exec -w /app web ls -la - Run ls in the /app directory inside the running container
+docker exec -e DEBUG=1 web printenv DEBUG - Set an environment variable for this exec process only
+docker exec -d web sh -c 'echo started > /tmp/job.log' - Start a command in the running container without attaching to its output
+docker start -ai web - Start a stopped container, attach its output, and connect standard input
+docker stop --timeout 30 web - Give the container 30 seconds to exit before forcefully stopping it
+docker restart --timeout 30 web - Restart the container with a 30-second graceful-stop timeout
+docker kill --signal HUP web - Send SIGHUP to the container's main process
+docker rm -f web - Force-stop and remove the container; its writable layer is lost
+docker rm -v web - Remove a stopped container and its anonymous volumes; named volumes remain
+docker container prune --filter until=24h - Remove stopped containers created more than 24 hours ago after confirmation
+docker inspect --format '{{.State.Status}}' web - Print only the container's current state
+docker inspect --format '{{json .Mounts}}' web - Print the container's mounts as JSON
+docker port web - Display the container's published host-to-container port mappings
+docker stats --no-stream - Show a single snapshot of running containers' resource usage
+docker stats --all --no-stream - Show one resource-usage snapshot including stopped containers
+docker cp ./config.yml web:/app/config.yml - Copy a file from the host into the container
+docker cp web:/app/output.txt ./output.txt - Copy a file from the container to the host
+docker diff web - List filesystem changes made in the container's writable layer
+docker build -t myapp:1.0 . - Build the current directory and tag the resulting image myapp:1.0
+docker build -f Dockerfile.prod -t myapp:prod . - Build using Dockerfile.prod instead of the default Dockerfile
+docker build --no-cache -t myapp:1.0 . - Build without reusing cached build steps
+docker build --pull -t myapp:1.0 . - Check for newer versions of base images during the build
+docker build --build-arg APP_ENV=production -t myapp:1.0 . - Supply a build-time ARG value; this does not automatically set a runtime environment variable
+docker build --target production -t myapp:prod . - Build only up to the named production stage in a multi-stage Dockerfile
+docker build --progress plain . - Print build progress as plain text instead of an interactive display
+docker build --secret id=api_key,src=./api-key.txt . - Make a secret available to build steps that explicitly mount it without baking it into an ARG
+docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/USERNAME/myapp:1.0 --push . - Build two architectures and publish the image to a registry you can write to
+docker buildx build --platform linux/amd64 -t myapp:1.0 --load . - Build an AMD64 image and load it into the local Docker image store
+docker buildx build --cache-to type=local,dest=.build-cache --cache-from type=local,src=.build-cache . - Export and reuse a local build cache
+docker buildx create --name multi --driver docker-container --use - Create and select a builder backed by a dedicated BuildKit container
+docker buildx inspect --bootstrap - Inspect the selected builder and start its BuildKit service if needed
+docker images -a - List all local images, including intermediate images
+docker images -q - Print only local image IDs
+docker images --filter dangling=true - List dangling images that have no tag
+docker image inspect --format '{{.Size}}' myapp:1.0 - Print an image's size in bytes
+docker image history --no-trunc myapp:1.0 - Show full image-layer history without truncation
+docker pull --platform linux/arm64 alpine:latest - Pull the ARM64 variant of an image
+docker tag myapp:1.0 ghcr.io/USERNAME/myapp:1.0 - Add a registry-qualified tag to an existing local image
+docker push ghcr.io/USERNAME/myapp:1.0 - Upload a tagged image to a registry you can write to
+docker login ghcr.io -u USERNAME --password-stdin - Read a registry password or token from standard input instead of a command-line argument
+docker save -o myapp.tar myapp:1.0 - Save an image and its layers to a tar archive
+docker load -i myapp.tar - Load images and tags from a saved tar archive
+docker export -o web-rootfs.tar web - Export a container filesystem without its image history or mounted volume contents
+docker import web-rootfs.tar restored:latest - Create a new filesystem image from a tar archive
+docker image prune -a - Remove images not referenced by any container after confirmation
+docker image prune --filter until=168h - Remove dangling images created more than seven days ago after confirmation
+docker network create --driver bridge app-net - Create a user-defined bridge network
+docker network create --internal isolated-net - Create a network that restricts external connectivity
+docker network create --subnet 172.28.0.0/16 app-net - Create a network with a specified IP subnet
+docker network connect --alias api app-net web - Connect an existing container to app-net with the DNS alias api
+docker network inspect app-net - Display network configuration and attached containers
+docker network disconnect app-net web - Disconnect a container from a network
+docker volume create app-data - Create a named volume that can persist beyond a container's lifetime
+docker volume inspect app-data - Display volume configuration and storage details
+docker volume ls --filter dangling=true - List volumes that are not referenced by any container
+docker volume prune -a - Remove all unused local volumes, including named volumes, after confirmation; stored data is deleted
+docker compose up -d - Start the Compose project's services in detached mode (in the background)
+docker compose up -d --build - Build service images and start the services in the background
+docker compose up -d --force-recreate - Recreate service containers even when their configuration has not changed
+docker compose up -d --no-deps web - Start only web without starting its dependency services
+docker compose up -d --scale worker=3 - Start three instances of worker; fixed published host ports can conflict when scaling
+docker compose up --wait --wait-timeout 120 - Start in detached mode and wait up to 120 seconds for services to be running or healthy
+docker compose -f compose.prod.yml up -d - Start services from the specified Compose file
+docker compose -p demo up -d - Set the Compose project name to demo; -p here means project name, not a port mapping
+docker compose --profile debug up -d - Enable services in the debug profile as well as services without profiles
+docker compose --env-file .env.prod up -d - Use the specified file for Compose environment-variable interpolation
+docker compose down - Remove the project's service containers and networks while keeping named volumes
+docker compose down -v - Remove the project's containers, networks, declared named volumes, and attached anonymous volumes; external volumes remain
+docker compose down --remove-orphans - Also remove containers for services no longer defined in the Compose file
+docker compose logs -f --tail 100 - Show the last 100 log lines for each service and follow new output
+docker compose logs -f web - Follow logs from only the web service
+docker compose ps -a - List all service containers, including stopped containers
+docker compose exec web sh - Open a shell in the web service; Compose allocates an interactive terminal by default
+docker compose exec -T web printenv - Run a command without allocating a pseudo-terminal, useful in scripts
+docker compose run --rm web sh - Run a one-off web service container and remove it when the command exits
+docker compose run --rm --service-ports web - Run a one-off service container with the service's configured port mappings enabled
+docker compose run --rm -p 8080:80 web - Publish host port 8080 to port 80 in a one-off web service container
+docker compose build --no-cache --pull - Build service images without cached steps and check for newer base images
+docker compose pull --ignore-pull-failures - Pull service images while continuing if an image cannot be pulled
+docker compose config -q - Validate the Compose configuration without printing it
+docker compose config --services - Print the service names defined by the resolved Compose configuration
+docker compose restart --timeout 30 web - Restart web with a 30-second graceful-stop timeout
+docker compose stop --timeout 30 - Stop service containers without removing them
+docker compose watch - Watch source files and apply the configured development sync or rebuild rules
+docker system df -v - Show detailed disk usage for images, containers, volumes, and build cache
+docker system prune -a - Remove stopped containers, unused networks, all unused images, and unused build cache after confirmation
+docker system prune --volumes - Also remove unused anonymous volumes during system cleanup; volume data is deleted
+docker builder prune --filter until=24h - Remove build cache older than 24 hours after confirmation
+docker events --filter type=container --filter event=die - Stream events for containers whose main process exits
+docker context create remote --docker host=ssh://USER@SERVER - Create a Docker context for an Engine reachable over SSH
+docker --context remote ps - List containers on the Engine selected by the remote context
+docker context use default - Select the default Docker context for subsequent commands
+docker swarm init --advertise-addr MANAGER_IP - Initialize a Swarm and advertise the specified manager address
+docker service create --name web --replicas 3 --publish published=8080,target=80 nginx - Create a Swarm service with three replicas and publish service port 8080 to container port 80
+docker service update --image nginx:alpine web - Roll out a new image for the Swarm service web
+docker service update --replicas 5 web - Scale a Swarm service to five replicas
+docker stack deploy -c compose.yml mystack - Deploy a Swarm stack using the specified Compose file
