@@ -1,0 +1,22 @@
+{
+  "generated_at": "2026-10-19T11:42:45.330869+00:00",
+  "source": "Installed kubectl: recursive --help, kubectl options, client-only version",
+  "client_version": {
+    "clientVersion": {
+      "major": "1",
+      "minor": "37",
+      "gitVersion": "v1.37.0",
+      "gitCommit": "f54c212e3a2f75d674b717a9b29052b20b60aefc",
+      "gitTreeState": "clean",
+      "buildDate": "2026-08-26T10:44:20Z",
+      "goVersion": "go1.27.0",
+      "compiler": "gc",
+      "platform": "darwin/arm64"
+    },
+    "kustomizeVersion": "v5.8.1"
+  },
+  "command_count": 107,
+  "help_page_count": 107,
+  "help_failures": [],
+  "scope": "Built-in commands exposed by this client; excludes external plugins and cluster-specific resources"
+}

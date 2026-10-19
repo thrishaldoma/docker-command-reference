@@ -6,12 +6,13 @@ from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parent
-COMMANDS = (ROOT / "commands.txt").read_text(encoding="utf-8").splitlines()
-FLAGS = (ROOT / "flags.txt").read_text(encoding="utf-8").splitlines()
-EXAMPLES = (ROOT / "examples.txt").read_text(encoding="utf-8").splitlines()
+DOCKER = ROOT / "docker"
+COMMANDS = (DOCKER / "commands.txt").read_text(encoding="utf-8").splitlines()
+FLAGS = (DOCKER / "flags.txt").read_text(encoding="utf-8").splitlines()
+EXAMPLES = (DOCKER / "examples.txt").read_text(encoding="utf-8").splitlines()
 # Put practical examples first so common flags are immediately discoverable.
 LINES = list(dict.fromkeys(EXAMPLES + sorted(COMMANDS + FLAGS)))
-CATALOG = json.loads((ROOT / "catalog.json").read_text())
+CATALOG = json.loads((DOCKER / "catalog.json").read_text())
 HELP = """curl localhost:8080 - List practical examples, commands, and flag descriptions
 curl localhost:8080/examples - Show practical commands with values and combined flags
 curl localhost:8080/flags - Show short and long option reference templates

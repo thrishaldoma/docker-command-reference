@@ -4,7 +4,8 @@ LABEL org.opencontainers.image.title="Docker Command Reference" \
       org.opencontainers.image.source="https://github.com/thrishaldoma/docker-command-reference"
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PORT=8080
 WORKDIR /app
-COPY server.py commands.txt flags.txt examples.txt catalog.json /app/
+COPY server.py /app/
+COPY docker/ /app/docker/
 USER 65532:65532
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 import subprocess
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1] / "docker"
 ENV = dict(os.environ, NO_COLOR="1", TERM="dumb", DOCKER_CLI_HINTS="false")
 ENV.pop("DOCKER_HIDE_LEGACY_COMMANDS", None)
 # An active non-Swarm daemon hides Swarm and experimental commands from help.
@@ -71,6 +71,7 @@ def option_templates(command, spec):
 
 
 def main():
+    ROOT.mkdir(parents=True, exist_ok=True)
     entries = {"docker": "Manage containers, images, networks, volumes, and Docker services"}
     pending = ["docker"]
     visited = set()

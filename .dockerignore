@@ -1,7 +1,8 @@
 *
 !Dockerfile
 !server.py
-!commands.txt
-!catalog.json
-!flags.txt
-!examples.txt
+!docker/
+!docker/commands.txt
+!docker/catalog.json
+!docker/flags.txt
+!docker/examples.txt

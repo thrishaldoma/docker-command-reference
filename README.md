@@ -1,5 +1,21 @@
 # Docker Command Reference
 
+## Command folders
+
+- [docker/](docker/README.txt): the complete existing Docker catalog, option
+  templates, practical examples and version metadata.
+- [kubernetes/](kubernetes/README.txt): built-in kubectl commands, complete command
+  help with flags, practical examples and client-version metadata.
+- [linux/](linux/README.txt): important Linux commands grouped by task, including
+  files, permissions, processes, networking, services, storage and packages.
+
+References use plain-text `.txt` files. Start with
+[Docker examples](docker/examples.txt),
+[kubectl examples](kubernetes/examples.txt), or
+[Linux commands](linux/commands.txt). The HTTP service continues to serve the
+Docker reference with the same endpoints; all three references are available in
+the repository.
+
 ## DevOps lab solutions
 
 The [solutions index](solutions/INDEX.txt) lists all 64 questions across 19 topics
@@ -69,7 +85,7 @@ To share the running service from your own server, publish port 8080 and use `cu
 
 ## Coverage
 
-`commands.txt` and `flags.txt` are versioned snapshots generated recursively from installed Docker CLI and plugin `--help` output, including core Engine commands, aliases, Swarm, Compose, Buildx, and installed Docker Desktop plugins. Both short and long options are included, with wrapped descriptions joined onto one line. `examples.txt` supplies curated commands with concrete values and common flag combinations. `catalog.json` records versions, generation time, counts, and any help failures. Plugin availability varies by installation; future releases, hidden options, platform-specific options unavailable in this CLI, and third-party plugins are not automatically included. Arbitrary values and every possible combination of flags cannot be enumerated.
+`docker/commands.txt` and `docker/flags.txt` are versioned snapshots generated recursively from installed Docker CLI and plugin `--help` output, including core Engine commands, aliases, Swarm, Compose, Buildx, and installed Docker Desktop plugins. Both short and long options are included, with wrapped descriptions joined onto one line. `docker/examples.txt` supplies curated commands with concrete values and common flag combinations. `docker/catalog.json` records versions, generation time, counts, and any help failures. Plugin availability varies by installation; future releases, hidden options, platform-specific options unavailable in this CLI, and third-party plugins are not automatically included. Arbitrary values and every possible combination of flags cannot be enumerated.
 
 Descriptions are taken from the tools' own command help. See the [official Docker CLI reference](https://docs.docker.com/reference/cli/docker/) for syntax, arguments, flags, and requirements. Some listed commands require Swarm, experimental daemon features, a plugin, or a Docker subscription.
 
@@ -77,6 +93,7 @@ Descriptions are taken from the tools' own command help. See the [official Docke
 
 ```sh
 python3 scripts/generate_reference.py
+python3 scripts/generate_kubectl_reference.py
 python3 -m unittest discover -s tests -v
 docker build -t docker-command-reference:local .
 docker run --rm -p 8080:8080 docker-command-reference:local

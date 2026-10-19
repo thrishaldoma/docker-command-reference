@@ -1,0 +1,334 @@
+# Help and command discovery
+man ls - Open the manual for ls; press q to quit
+man 5 crontab - Read the crontab file-format manual
+info coreutils - Browse the GNU core utilities manual when installed
+ls --help - Show command usage and available options
+type -a python3 - Show how the shell resolves python3, including aliases and executables
+command -v python3 - Locate the executable or shell command selected for python3
+which bash - Locate bash on PATH using the external which utility
+apropos network - Search manual-page descriptions for network-related tools
+history - Show the current shell's command history
+
+# Navigation, files and directories
+pwd - Print the current working directory
+cd /var/log - Change to an absolute directory path
+cd .. - Move to the parent directory
+cd - - Return to the previous working directory
+cd ~ - Change to your home directory
+ls -lah - List entries including hidden files, permissions, owners and readable sizes
+ls -lt - List entries ordered by modification time, newest first
+tree -L 2 - Display a directory tree two levels deep; requires tree
+mkdir -p project/{src,tests,docs} - Create a project directory and three children using Bash brace expansion
+touch notes.txt - Create an empty file or update an existing file's timestamps
+cp source.txt copy.txt - Copy a file; an existing destination can be overwritten
+cp -i source.txt copy.txt - Ask before overwriting the destination file
+cp -a source/ backup/ - Copy a directory while preserving its attributes and links
+mv -i old.txt new.txt - Rename or move a file, asking before overwriting
+rm -i notes.txt - Delete a file after confirmation
+rm -rI old-project/ - Remove a directory recursively, asking once before proceeding
+rmdir empty-directory - Remove a directory only if it is empty
+ln source.txt hardlink.txt - Create another hard link to the same file data on the same filesystem
+ln -s /opt/app/current app-link - Create a symbolic link to a target path
+readlink app-link - Print the target stored in a symbolic link
+readlink -f app-link - Resolve symlinks to a canonical path using GNU readlink
+realpath ./notes.txt - Print a canonical absolute path
+file report.bin - Identify a file's probable format
+stat notes.txt - Display a file's ownership, permissions, timestamps and size
+basename /var/log/app.log - Print the last component of a path
+dirname /var/log/app.log - Print the directory component of a path
+
+# Reading and editing text
+cat notes.txt - Print the entire file to standard output
+less /var/log/app.log - Browse a file interactively; use / to search and q to quit
+head -n 20 app.log - Print the first twenty lines
+tail -n 50 app.log - Print the last fifty lines
+tail -F app.log - Follow a log by filename and retry when it is rotated or recreated
+nl -ba notes.txt - Print the file with every line numbered
+wc -l notes.txt - Count newline characters in a file
+wc -w notes.txt - Count words in a file
+wc -c notes.txt - Count bytes in a file
+nano notes.txt - Edit a file in Nano; Ctrl+O saves and Ctrl+X exits
+vim notes.txt - Edit a file in Vim; i enters insert mode, Escape then :wq saves and exits
+diff -u old.conf new.conf - Compare two text files in unified format; exit status 1 means differences
+cmp first.bin second.bin - Compare files byte by byte
+tee output.txt - Copy standard input to both the terminal and a file, replacing the file
+tee -a output.txt - Copy standard input to the terminal and append it to a file
+
+# Searching, filtering and transforming
+find . -type f -name '*.log' - Find regular files with names ending in .log
+find /var/log -type f -mtime +7 - Find files whose rounded-down age in days exceeds seven
+find . -type f -size +100M - Find files larger than 100 MiB using GNU find's M unit
+find . -type f -user root - Find files owned by root
+find . -type f -perm /111 - Find files with at least one executable permission bit
+find . -type f -name '*.conf' -exec grep -nH 'timeout' {} + - Search matching config files while preserving filenames with spaces
+find . -type f -name '*.txt' -print0 | xargs -0 -r wc -l - Count lines using null-delimited filenames; -r is a GNU xargs option
+grep -n 'ERROR' app.log - Print matching lines with line numbers
+grep -in 'error' app.log - Match text without regard to letter case
+grep -v '^#' app.conf - Print lines that do not begin with a comment marker
+grep -E 'ERROR|WARN' app.log - Match either expression using extended regular expressions
+grep -F 'a.b' notes.txt - Match the literal string a.b without interpreting regular expressions
+grep -RIn --include='*.conf' 'timeout' ./config - Recursively search config files with filenames and line numbers
+rg -n 'TODO' . - Search files with ripgrep, respecting its default ignore rules
+rg --files - List files selected by ripgrep's ignore and hidden-file rules
+sort names.txt - Sort lines according to the current locale
+sort -n numbers.txt - Sort lines by numeric value
+sort names.txt | uniq -c - Count occurrences of identical lines after sorting
+cut -d: -f1 /etc/passwd - Print the first colon-separated field from each passwd entry
+awk '{print $1}' access.log - Print the first whitespace-delimited field of each line
+awk -F: '$3 >= 1000 {print $1, $3}' /etc/passwd - Print account names and UIDs at least 1000; this may include special accounts
+sed -n '10,20p' notes.txt - Print lines ten through twenty
+sed 's/old/new/g' notes.txt - Print text with replacements without changing the input file
+sed -i.bak 's/old/new/g' notes.txt - Replace text in place and retain the original as notes.txt.bak
+tr '[:lower:]' '[:upper:]' < notes.txt - Translate lowercase characters to uppercase
+tr -d '\r' < windows.txt > unix.txt - Remove carriage-return characters into a separate file
+paste names.txt values.txt - Join corresponding lines with tabs
+join <(sort left.txt) <(sort right.txt) - Join files on their first field using Bash process substitution
+split -l 1000 large.txt part- - Split a file into chunks of at most one thousand lines
+strings program.bin - Print sequences of printable characters from a binary file
+
+# Users, groups, permissions and ownership
+whoami - Print the current effective username
+id - Display your user ID and group memberships
+id alice - Display an account's IDs and group memberships
+groups alice - List groups to which an account belongs
+getent passwd alice - Look up an account through configured name services
+getent group developers - Look up a group through configured name services
+who - List logged-in sessions
+w - Show logged-in users and their current activities
+sudo -l - List commands your sudo policy permits
+sudo COMMAND - Run an allowed command as root after any required authentication
+sudo -u alice COMMAND - Run an allowed command as alice
+sudo -iu alice - Start a login shell as alice
+passwd - Change your own password
+sudo passwd alice - Change alice's password
+sudo useradd -m -s /bin/bash alice - Create an account with a home directory and Bash login shell
+sudo groupadd developers - Create a group
+sudo usermod -aG developers alice - Append a supplementary group without removing existing memberships
+sudo usermod -L alice - Lock password-based authentication; other login methods may still work
+sudo usermod -U alice - Unlock an account's password
+sudo userdel alice - Remove an account while retaining its home directory
+chmod u+x script.sh - Add execute permission for the file owner
+chmod 640 app.conf - Give the owner read/write, the group read, and others no permissions
+chmod 750 private-directory - Give the owner full directory access and the group read/search access
+chmod 600 private-key - Allow only the owner to read and write a file
+chmod g+s shared-directory - Set directory setgid so new children inherit its group
+chmod +t shared-directory - Set the sticky bit to restrict removal of entries in a shared directory
+umask 027 - Set this shell's mask so typical new files are at most 640 and directories 750
+sudo chown alice:developers app.conf - Change a file's owner and group
+sudo chown -R alice:developers project/ - Recursively change ownership throughout a directory
+chgrp developers shared.txt - Change a file's group when permitted
+getfacl shared.txt - Display access-control-list entries; requires ACL utilities
+setfacl -m u:alice:rw shared.txt - Grant alice read/write access through a file ACL
+namei -l /var/www/app/index.html - Show permissions and owners for every path component
+
+# Processes, jobs and performance
+ps aux - List processes using BSD-style ps output
+ps -ef - List processes with full-format process relationships
+ps -eo pid,ppid,user,%cpu,%mem,cmd --sort=-%cpu - Sort processes by CPU usage with selected columns
+pgrep -af nginx - Show PIDs and command lines matching nginx
+pidof nginx - Print process IDs for the specified program name
+top - Monitor processes, CPU and memory interactively
+htop - Open an interactive process viewer if installed
+pstree -p - Display process ancestry with PIDs
+kill -TERM PID - Request graceful termination of a process
+kill -KILL PID - Force termination without allowing process cleanup
+pkill -TERM -x worker - Request termination of all processes named exactly worker
+jobs -l - List jobs started by the current interactive shell
+bg %1 - Resume shell job 1 in the background
+fg %1 - Bring shell job 1 into the foreground
+nohup ./worker.sh > worker.log 2>&1 & - Start a background command that ignores hangup and writes to a log
+wait PID - Wait for a child process of the current shell to finish
+nice -n 10 ./batch.sh - Start a command with lower CPU scheduling priority
+renice 10 -p PID - Set a process's nice value to 10 when permitted
+uptime - Show uptime, logged-in user count and load averages
+free -h - Show RAM and swap use in readable units; available estimates memory usable by new work
+vmstat 1 5 - Sample CPU, memory and I/O five times; the first report includes averages since boot
+iostat -xz 1 - Monitor extended device I/O statistics; requires sysstat
+pidstat -p PID 1 - Monitor a process's resource use; requires sysstat
+timeout 30s ./job.sh - Stop a command if it runs longer than thirty seconds
+time ./job.sh - Measure a command's elapsed, user and system CPU time
+ulimit -n - Display the current shell's soft open-file limit
+lsof -p PID - List files opened by a process; permissions affect visibility
+sudo lsof +L1 - Find open files whose directory links have been removed
+sudo strace -p PID - Trace system calls of a process until interrupted
+
+# System information and time
+uname -a - Display kernel and machine information
+cat /etc/os-release - Show distribution identification and version information
+hostname - Print the hostname
+hostnamectl - Show hostname and platform information on systemd systems
+lscpu - Show CPU architecture and topology
+lsmem - Show memory-block information
+lsmod - List loaded kernel modules
+lspci - List PCI devices; requires pciutils
+lsusb - List USB devices; requires usbutils
+date - Show the current local date, time and timezone
+date -u - Show the current time in UTC
+timedatectl - Inspect the clock, timezone and time-synchronization status on systemd systems
+sudo timedatectl set-timezone Asia/Kolkata - Change the system timezone
+sudo dmesg --ctime - Read kernel messages with human-readable timestamps when permitted
+sysctl net.ipv4.ip_forward - Read a kernel parameter without changing it
+
+# Networking, DNS and HTTP
+ip -brief address - Show concise interface addresses and states
+ip link show - Show interface link details
+ip route show - Display IPv4 routes
+ip -6 route show - Display IPv6 routes
+ip route get 1.1.1.1 - Show the route and source address the kernel would select
+ip neigh show - Inspect neighbor entries such as ARP mappings
+ping -c 4 example.com - Send four ICMP echo requests; some hosts filter ICMP
+tracepath example.com - Inspect the route and path MTU when tracepath is installed
+traceroute example.com - Trace routers toward a destination when installed and traffic is permitted
+ss -tuln - Show listening TCP and bound UDP sockets with numeric addresses
+sudo ss -tulnp - Include process information for listening sockets
+ss -tan state established - Show established TCP connections
+sudo lsof -iTCP:8080 -sTCP:LISTEN - Identify a process listening on TCP port 8080
+getent hosts example.com - Resolve a hostname through the system's configured name services
+dig example.com A - Query DNS for IPv4 address records
+dig example.com MX - Query DNS for mail-exchange records
+dig @1.1.1.1 example.com - Query a specific DNS resolver
+dig +short example.com - Show a compact DNS response
+resolvectl status - Inspect DNS configuration on systems using systemd-resolved
+resolvectl query example.com - Resolve a name through systemd-resolved
+cat /etc/resolv.conf - Inspect resolver configuration; this file may be generated automatically
+curl -I https://example.com - Request HTTP response headers using HEAD
+curl -fsSL https://example.com/file.txt -o file.txt - Download a file, follow redirects and fail on HTTP errors
+curl -v https://example.com - Inspect connection, TLS and HTTP exchange details
+curl --connect-timeout 5 --max-time 15 https://example.com - Bound connection setup and total request time
+curl -X POST -H 'Content-Type: application/json' -d '{"name":"demo"}' http://localhost:8000/items - Send a JSON POST request
+wget -O file.txt https://example.com/file.txt - Download a URL into a specified local file
+nc -vz example.com 443 - Test a TCP connection with a netcat implementation supporting -v and -z
+sudo tcpdump -ni any port 53 - Capture DNS-port traffic on available interfaces until interrupted
+sudo tcpdump -ni eth0 -c 50 -w capture.pcap - Save fifty packets from eth0 into a capture file
+sudo nft list ruleset - Inspect nftables firewall rules
+sudo ufw status verbose - Inspect firewall status on systems using UFW
+sudo firewall-cmd --list-all - Inspect the default zone on systems using firewalld
+
+# SSH and file transfer
+ssh alice@server.example.com - Open an SSH session to a remote account
+ssh -p 2222 alice@server.example.com - Connect to SSH on a non-default port
+ssh -i ~/.ssh/id_ed25519 alice@server.example.com - Select a private key for SSH authentication
+ssh-keygen -t ed25519 -C 'alice@example.com' - Create an Ed25519 keypair, prompting for its path and passphrase
+ssh-copy-id alice@server.example.com - Install your public key for a remote account when password access is available
+ssh -L 8080:localhost:80 alice@server.example.com - Forward local port 8080 to port 80 as reached from the remote server
+scp report.txt alice@server.example.com:/tmp/ - Copy a local file to a remote system over SSH
+scp alice@server.example.com:/tmp/report.txt ./ - Copy a remote file to the current directory
+scp -r project/ alice@server.example.com:/tmp/ - Copy a directory recursively over SSH
+sftp alice@server.example.com - Open an interactive file-transfer session
+rsync -av --dry-run source/ destination/ - Preview copying source contents into a destination
+rsync -av source/ destination/ - Copy source contents while preserving common attributes; does not delete extra destination files
+rsync -av -e ssh source/ alice@server.example.com:/backup/ - Synchronize directory contents over SSH
+
+# Services, logs and scheduling
+systemctl status nginx - Inspect the current nginx service state and recent logs
+systemctl is-active nginx - Check whether nginx is active using output and exit status
+systemctl is-enabled nginx - Check the service's enablement state
+systemctl list-units --type=service --all - List loaded service units, including inactive units
+systemctl list-unit-files --type=service - List installed service unit files and enablement states
+systemctl --failed - List failed units
+sudo systemctl start nginx - Start the nginx service now
+sudo systemctl stop nginx - Stop the nginx service now
+sudo systemctl restart nginx - Stop and start the service, interrupting its current work
+sudo systemctl reload nginx - Ask the service to reload configuration if supported
+sudo systemctl enable --now nginx - Enable the service for configured activation and start it now
+sudo systemctl disable --now nginx - Disable the service's enablement links and stop it now
+sudo systemctl daemon-reload - Reload systemd unit definitions after editing unit files
+systemctl cat nginx - Show the unit file and drop-in configuration
+systemctl show nginx -p MainPID - Read the service's main process ID
+journalctl -u nginx --since '1 hour ago' - Read recent logs for the nginx unit when permitted
+journalctl -u nginx -f - Follow a unit's journal entries
+journalctl -b - Read logs from the current boot
+journalctl -b -1 - Read logs from the previous boot if retained
+journalctl -p err -b - Show error-priority and more severe messages from this boot
+journalctl -k -b - Show kernel messages from this boot
+journalctl --disk-usage - Show space occupied by journal files
+crontab -l - List your scheduled cron jobs
+crontab -e - Edit your scheduled cron jobs
+systemctl list-timers --all - List systemd timers and their schedules
+at now + 5 minutes - Enter commands to schedule once, then press Ctrl+D; requires atd
+
+# Storage, filesystems and archives
+df -hT - Show filesystem types, capacity and space usage in readable units
+df -i - Show inode usage; a filesystem can run out of inodes despite free bytes
+du -sh project/ - Estimate a directory tree's total disk usage
+du -h --max-depth=1 /var/log - Show disk usage for a directory and its immediate children
+lsblk -f - List block devices, filesystems, labels and mount points
+sudo blkid - Inspect block-device filesystem identifiers
+findmnt - Show mounted filesystems as a tree
+findmnt --target /var - Show the filesystem containing a path
+mount | less - Browse mounted filesystems
+sudo mount /dev/sdX1 /mnt/data - Mount an existing filesystem after replacing the device and preparing the mount directory
+sudo umount /mnt/data - Unmount a filesystem when it is no longer in use
+swapon --show - List active swap devices and files
+tar -czf backup.tar.gz project/ - Create a gzip-compressed archive of a directory
+tar -tzf backup.tar.gz - List archive entries before extracting
+tar -xzf backup.tar.gz -C restore/ - Extract into an existing restore directory
+gzip -k report.txt - Compress a file while retaining the original
+gunzip -k report.txt.gz - Decompress a gzip file while retaining the archive
+zcat report.txt.gz - Print decompressed gzip content without creating a file
+zip -r archive.zip project/ - Create a recursive ZIP archive
+unzip -l archive.zip - List entries in a ZIP archive
+unzip archive.zip -d restore/ - Extract a ZIP archive into a directory
+sha256sum download.iso - Calculate a file's SHA-256 checksum
+sha256sum -c SHA256SUMS - Verify files against a trusted checksum manifest
+
+# Package management: Debian and Ubuntu
+sudo apt update - Refresh package indexes without upgrading installed packages
+apt list --upgradable - List available package upgrades
+apt search nginx - Search package descriptions
+apt show nginx - Display package metadata
+sudo apt install nginx - Install nginx and required dependencies
+sudo apt upgrade - Upgrade installed packages according to APT's upgrade policy
+sudo apt remove nginx - Remove the package while generally retaining its configuration files
+sudo apt purge nginx - Remove the package and its package-managed configuration
+dpkg -l - List package installation states
+dpkg -L nginx - List paths registered to an installed package
+dpkg -S /bin/ls - Find the installed package that owns a path
+apt-cache policy nginx - Show installed and candidate versions and repository priorities
+
+# Package management: Fedora and RHEL-family systems
+dnf search nginx - Search available packages
+dnf info nginx - Show package metadata
+dnf check-update - Check for available upgrades; exit status 100 means upgrades are available
+sudo dnf install nginx - Install nginx and dependencies
+sudo dnf upgrade - Upgrade installed packages
+sudo dnf remove nginx - Remove a package and dependencies selected by DNF's policy
+rpm -qa - List installed RPM packages
+rpm -ql nginx - List paths registered to an installed RPM package
+rpm -qf /usr/bin/ls - Find the installed RPM package owning a file
+
+# Bash variables, redirection and scripting
+printf '%s\n' 'hello world' - Print text with an explicit output format
+export APP_ENV=development - Set a variable inherited by child processes
+printenv APP_ENV - Print the value of one exported environment variable
+unset APP_ENV - Remove a shell variable
+printf '%s\n' "$PATH" - Show the executable search path
+source ./settings.sh - Execute a trusted shell file in the current shell
+alias ll='ls -lah' - Define a shortcut for the current shell session
+unalias ll - Remove a shell alias
+printf '%s\n' hello > output.txt - Replace a file with command output
+printf '%s\n' hello >> output.txt - Append command output to a file
+./job.sh > output.log 2> errors.log - Save standard output and standard error separately
+./job.sh > combined.log 2>&1 - Save standard output and standard error to one file
+./job.sh 2>&1 | tee combined.log - Display and save both output streams
+sort < names.txt > sorted.txt - Read input from one file and write sorted output to another
+./build.sh && ./deploy.sh - Run deployment only if the build exits successfully
+./check.sh || printf '%s\n' 'check failed' - Print a message if the check exits unsuccessfully
+printf '%s\n' "$?" - Display the immediately preceding command's exit status
+read -r answer - Read one input line into a variable without interpreting backslashes
+test -f config.yaml - Return success if a path is a regular file
+test -d logs - Return success if a path is a directory
+for file in ./*.log; do [ -f "$file" ] && printf '%s\n' "$file"; done - Iterate over matching regular log files with quoted paths
+if [ -f config.yaml ]; then printf '%s\n' found; fi - Run a command only when a file exists
+bash -n script.sh - Parse a Bash script for syntax errors without executing it
+bash -x script.sh - Execute a Bash script while tracing expanded commands; traces can expose variable contents
+shellcheck script.sh - Analyze common shell-script mistakes when ShellCheck is installed
+set -o pipefail - Make a pipeline report its rightmost nonzero exit status in this Bash session
+
+# Terminal sessions
+clear - Clear the visible terminal display
+reset - Reinitialize terminal settings after garbled output
+tmux new -s work - Start a named persistent terminal session; requires tmux
+tmux ls - List tmux sessions
+tmux attach -t work - Reconnect to a named tmux session
+exit - Leave the current shell session

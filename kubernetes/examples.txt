@@ -1,0 +1,115 @@
+kubectl version --client - Show the installed client version without contacting a cluster
+kubectl --help - List command groups and top-level usage
+kubectl get --help - Show usage, examples and flags for get
+kubectl options - Show global flags, including namespace, context and kubeconfig
+kubectl config get-contexts - List configured contexts
+kubectl config current-context - Show the selected context
+kubectl config use-context CONTEXT - Switch the context used by subsequent commands
+kubectl --context CONTEXT get pods - Select a context for this command only
+kubectl --kubeconfig ./config get nodes - Use a specific kubeconfig file
+kubectl config set-context --current --namespace=demo - Change the current context's default namespace
+kubectl config view --minify - Show configuration for the current context with sensitive fields redacted
+kubectl cluster-info - Show control-plane and cluster service endpoints
+kubectl api-resources - List resource types supported by the connected cluster
+kubectl api-resources --namespaced=true - List namespaced resource types
+kubectl api-versions - List API group versions supported by the connected cluster
+kubectl explain deployment - Read the Deployment API schema
+kubectl explain deployment.spec.template.spec.containers - Inspect container fields in the Deployment schema
+kubectl explain pod.spec --recursive - Expand nested Pod specification fields
+kubectl get namespaces - List namespaces
+kubectl create namespace demo - Create a namespace named demo
+kubectl get nodes - List cluster nodes
+kubectl get nodes -o wide - Include node addresses, OS and runtime details
+kubectl describe node NODE - Inspect node conditions, capacity and events
+kubectl get pods -n demo - List pods in the demo namespace
+kubectl get pods -A - List pods across all namespaces
+kubectl get pods -n demo -o wide - Include pod IP addresses and assigned nodes
+kubectl get pods -n demo --show-labels - Display labels alongside pods
+kubectl get pods -n demo -l app=web - Select pods with the label app=web
+kubectl get pods -n demo --field-selector=status.phase=Running - Select pods in the Running phase
+kubectl get pods -n demo --sort-by=.metadata.creationTimestamp - Sort pods from oldest to newest
+kubectl get pods -n demo -w - Watch changes to pods until interrupted
+kubectl get pod POD -n demo -o yaml - Print the complete pod resource as YAML
+kubectl get pod POD -n demo -o json - Print the complete pod resource as JSON
+kubectl get pods -n demo -o 'custom-columns=NAME:.metadata.name,NODE:.spec.nodeName' - Print selected fields as a table
+kubectl get pod POD -n demo -o jsonpath='{.status.podIP}' - Print one pod's IP address
+kubectl get deploy,sts,ds,svc,ingress -n demo - List common workload and traffic resources
+kubectl describe pod POD -n demo - Inspect pod status, scheduling details and events
+kubectl get events -n demo --sort-by=.metadata.creationTimestamp - List events ordered by creation time
+kubectl events -n demo --for pod/POD - Show events associated with one pod
+kubectl apply -f manifest.yaml - Create or update resources declared in a manifest
+kubectl apply -f manifests/ - Apply manifests from a directory
+kubectl apply -k overlays/dev/ - Render and apply a Kustomize overlay
+kubectl kustomize overlays/dev/ - Render a Kustomize overlay without applying it
+kubectl diff -f manifest.yaml - Compare a manifest with live resources; exit status 1 indicates differences
+kubectl apply --dry-run=server -f manifest.yaml - Ask the API server to validate changes without persisting them
+kubectl create deployment web --image=nginx:stable --replicas=2 - Create a Deployment with two nginx pods
+kubectl create deployment web --image=nginx:stable --dry-run=client -o yaml - Generate a Deployment manifest without creating it
+kubectl run toolbox --image=busybox:stable --restart=Never -- sleep 3600 - Create a standalone pod that sleeps for one hour
+kubectl run toolbox --image=busybox:stable --restart=Never --dry-run=client -o yaml - Generate a standalone Pod manifest
+kubectl scale deployment/web -n demo --replicas=3 - Change the desired Deployment replica count
+kubectl set image deployment/web -n demo nginx=nginx:stable - Update the named nginx container's image
+kubectl set env deployment/web -n demo LOG_LEVEL=info - Add or change an environment variable in a Deployment
+kubectl set env deployment/web -n demo LOG_LEVEL- - Remove an environment variable from a Deployment
+kubectl rollout status deployment/web -n demo --timeout=120s - Wait for a Deployment rollout with a two-minute timeout
+kubectl rollout history deployment/web -n demo - Show recorded rollout revisions
+kubectl rollout history deployment/web -n demo --revision=2 - Inspect a particular rollout revision
+kubectl rollout undo deployment/web -n demo - Roll back to the previous available revision
+kubectl rollout undo deployment/web -n demo --to-revision=2 - Roll back to revision 2 if it is retained
+kubectl rollout restart deployment/web -n demo - Restart Deployment pods through a rollout
+kubectl rollout pause deployment/web -n demo - Pause rollout processing for a Deployment
+kubectl rollout resume deployment/web -n demo - Resume rollout processing for a Deployment
+kubectl autoscale deployment/web -n demo --min=2 --max=5 --cpu=70% - Create a CPU-based HPA; requires resource metrics and CPU requests
+kubectl get hpa -n demo - Show HorizontalPodAutoscaler targets and current metrics
+kubectl expose deployment web -n demo --name=web-svc --port=80 --target-port=80 - Create a ClusterIP Service targeting the Deployment
+kubectl get services -n demo - List Service types, addresses and ports
+kubectl get endpointslices -n demo - Inspect backend endpoint slices
+kubectl get ingress -n demo - List Ingress resources; routing requires an ingress controller
+kubectl port-forward -n demo service/web-svc 8080:80 - Forward localhost port 8080 to a backend pod selected by the Service
+kubectl logs POD -n demo - Print logs from a pod's default container
+kubectl logs POD -n demo -c app - Print logs from a named container
+kubectl logs POD -n demo -c app --previous - Print logs from the previous terminated instance of a container
+kubectl logs -n demo -l app=web --all-containers=true --prefix --tail=100 - Print recent logs from containers in matching pods
+kubectl logs -f deployment/web -n demo --since=10m - Follow recent logs from a pod selected by the Deployment
+kubectl exec -it POD -n demo -- sh - Open an interactive shell if sh is installed in the container
+kubectl exec POD -n demo -c app -- printenv LOG_LEVEL - Read one environment variable from a named container
+kubectl cp ./report.txt demo/POD:/tmp/report.txt - Copy a local file into a container; requires tar in the container
+kubectl cp demo/POD:/tmp/report.txt ./report.txt - Copy a container file to the local machine; requires tar in the container
+kubectl debug -it POD -n demo --image=busybox:stable --target=app - Add an ephemeral debugging container targeting app
+kubectl top nodes - Show node CPU and memory usage; requires the resource metrics API
+kubectl top pods -n demo --containers - Show CPU and memory usage by container; requires resource metrics
+kubectl wait -n demo --for=condition=Ready pod -l app=web --timeout=120s - Wait for matching pods to become Ready
+kubectl wait -n demo --for=condition=complete job/report --timeout=300s - Wait for a Job to complete
+kubectl create job report -n demo --image=busybox:stable -- echo done - Create a Job that prints done and exits
+kubectl create cronjob heartbeat -n demo --image=busybox:stable --schedule='*/5 * * * *' -- date - Create a CronJob that prints the date every five minutes
+kubectl create job report-now -n demo --from=cronjob/report - Start a Job from an existing CronJob template
+kubectl create configmap app-config -n demo --from-literal=LOG_LEVEL=info - Create a ConfigMap from a literal key and value
+kubectl create configmap app-config -n demo --from-file=app.conf - Create a ConfigMap using a file's name and contents
+kubectl create secret generic app-secret -n demo --from-file=password=./password.txt - Create a Secret from a local file
+kubectl get configmaps,secrets -n demo - List ConfigMaps and Secrets without displaying their data
+kubectl get pvc -n demo - List persistent volume claims
+kubectl describe pvc data -n demo - Inspect a claim's binding status and events
+kubectl get pv - List cluster-scoped persistent volumes
+kubectl get storageclasses - List available storage classes and provisioners
+kubectl create serviceaccount app -n demo - Create a ServiceAccount
+kubectl create role pod-reader -n demo --verb=get,list,watch --resource=pods - Create a namespace-scoped Role
+kubectl create rolebinding app-pod-reader -n demo --role=pod-reader --serviceaccount=demo:app - Bind a Role to a ServiceAccount
+kubectl auth can-i list pods -n demo - Check whether your current identity may list pods
+kubectl auth can-i --list -n demo - List allowed actions for your current identity
+kubectl auth can-i get pods -n demo --as=system:serviceaccount:demo:app - Check a ServiceAccount's permission; requires impersonation permission
+kubectl get networkpolicies -n demo - List network policies; enforcement depends on the network plugin
+kubectl label deployment/web -n demo team=platform --overwrite - Set a label on the Deployment object
+kubectl label deployment/web -n demo team- - Remove a label from the Deployment object
+kubectl annotate deployment/web -n demo owner=platform --overwrite - Set a Deployment annotation
+kubectl patch deployment/web -n demo --type=merge -p '{"spec":{"replicas":3}}' - Merge a replica-count change into a Deployment
+kubectl edit deployment/web -n demo - Edit a live Deployment in your configured editor
+kubectl cordon NODE - Prevent new ordinary pods from being scheduled onto a node
+kubectl drain NODE --ignore-daemonsets --timeout=300s - Evict eligible pods for maintenance; respects disruption budgets and can refuse local-data pods
+kubectl uncordon NODE - Allow scheduling onto a node again
+kubectl taint nodes NODE dedicated=batch:NoSchedule - Add a scheduling taint to a node
+kubectl taint nodes NODE dedicated:NoSchedule- - Remove the specified node taint
+kubectl delete pod POD -n demo - Delete a pod; a controller may create a replacement
+kubectl delete -f manifest.yaml - Delete the resources identified by a manifest
+kubectl delete namespace demo - Delete the namespace and all namespaced resources inside it
+kubectl completion bash - Print a Bash completion script
+kubectl plugin list - List kubectl plugins discovered on PATH
