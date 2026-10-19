@@ -1,0 +1,150 @@
+Topic: Terraform
+Topic ID: terraform
+Question: 1
+Title: Your First Terraform Configuration
+Lab ID: terraform-first-config
+Environment: terraform
+Add-ons: none
+Source: /opt/devops-labs/labs/17-terraform/01-first-config
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Terraform describes infrastructure as code and works out the steps to make reality match it. To practise the workflow without a cloud account, you will use the `local` provider, which manages files on this machine, and the `random` provider, which generates values. The core loop is the same as in the cloud: **fmt, init, validate, plan**.
+
+The provider plugins are already cached on this machine, so `terraform init` works offline.
+
+## Tasks
+
+### Task 1: Write the configuration
+
+Create `/home/user/tf/basics/main.tf` with:
+
+- a `terraform` block with `required_providers` for `hashicorp/local` and `hashicorp/random`
+- a `random_pet` resource named `server` with `length = 2`
+- a `local_file` resource named `greeting` that writes the file `greeting.txt` in the module folder (`${path.module}/greeting.txt`) with the content `Hello from ${random_pet.server.id}!` followed by a newline
+
+### Task 2: Format, initialize and validate
+
+In `/home/user/tf/basics`, run `terraform fmt`, `terraform init` and `terraform validate`. The configuration must be correctly formatted and valid.
+
+### Task 3: Plan
+
+Run `terraform plan -out=tfplan` and save the human-readable plan to `plan.txt`:
+
+```
+terraform show -no-color tfplan > plan.txt
+```
+
+Do not apply the plan.
+
+### Task 4: Explain the plan
+
+Create `/home/user/tf/basics/explain.txt` with:
+
+```
+resources_to_add=<how many resources the plan adds>
+create_symbol=<the symbol the plan prints in front of resources it will create>
+greeting_address=<the resource address of the greeting file, as shown in the plan>
+lock_file=<the name of the file terraform init created to record provider versions>
+```
+
+## Notes
+
+- `terraform fmt -check` exits with an error when a file is not formatted.
+
+## Expected outcome
+
+A formatted, valid configuration, an initialized working directory, a saved plan that would create two resources, and a correct explanation of the plan.
+
+ANSWER
+======
+```bash
+mkdir -p /home/user/tf/basics && cd /home/user/tf/basics
+cat > main.tf <<'END'
+terraform {
+  required_providers {
+    local = {
+      source = "hashicorp/local"
+    }
+    random = {
+      source = "hashicorp/random"
+    }
+  }
+}
+
+resource "random_pet" "server" {
+  length = 2
+}
+
+resource "local_file" "greeting" {
+  filename = "${path.module}/greeting.txt"
+  content  = "Hello from ${random_pet.server.id}!\n"
+}
+END
+terraform fmt
+terraform init
+terraform validate
+terraform plan -out=tfplan
+terraform show -no-color tfplan > plan.txt
+
+cat > explain.txt <<'END'
+resources_to_add=2
+create_symbol=+
+greeting_address=local_file.greeting
+lock_file=.terraform.lock.hcl
+END
+```
+
+APPROACH
+========
+1. `mkdir -p /home/user/tf/basics && cd /home/user/tf/basics`, then write `main.tf`.
+2. `terraform fmt` rewrites the file in the standard style.
+3. `terraform init` downloads (here: links) the providers and writes `.terraform.lock.hcl`.
+4. `terraform validate` checks the syntax and references.
+5. `terraform plan -out=tfplan`, then `terraform show -no-color tfplan > plan.txt`.
+6. Read the plan and write `explain.txt`.
+
+HINT
+====
+- `terraform { required_providers { local = { source = "hashicorp/local" } } }`
+- Resource blocks look like `resource "local_file" "greeting" { filename = ... content = ... }`.
+- In a string, `${random_pet.server.id}` inserts another resource's attribute, and `\n` is a newline.
+- The plan summary line reads "Plan: N to add, 0 to change, 0 to destroy".
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+mkdir -p /home/user/tf/basics && cd /home/user/tf/basics
+cat > main.tf <<'END'
+terraform {
+  required_providers {
+    local = {
+      source = "hashicorp/local"
+    }
+    random = {
+      source = "hashicorp/random"
+    }
+  }
+}
+
+resource "random_pet" "server" {
+  length = 2
+}
+
+resource "local_file" "greeting" {
+  filename = "${path.module}/greeting.txt"
+  content  = "Hello from ${random_pet.server.id}!\n"
+}
+END
+terraform fmt >/dev/null
+terraform init -input=false >/dev/null
+terraform validate >/dev/null
+terraform plan -input=false -out=tfplan >/dev/null
+terraform show -no-color tfplan > plan.txt
+printf 'resources_to_add=2\ncreate_symbol=+\ngreeting_address=local_file.greeting\nlock_file=.terraform.lock.hcl\n' > explain.txt

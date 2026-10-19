@@ -1,0 +1,122 @@
+Topic: Git and GitHub
+Topic ID: git
+Question: 5
+Title: Resolve a Merge Conflict
+Lab ID: git-merge-conflict
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/05-git/05-merge-conflict
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Scenario
+
+Two developers changed the same line of the shop's home page on different branches. When the branches are merged, Git cannot decide which version to keep and reports a **merge conflict**. You will create the conflict by merging, resolve it by hand, commit the resolution and check the resulting history.
+
+The repository is `/home/user/website`. It has two branches:
+
+- `main`, where the page title was changed to `Northwind Shop`
+- `feature/new-title`, where the same line was changed to `Welcome Home`
+
+## Tasks
+
+### Task 1: Merge and hit the conflict
+
+On `main`, merge `feature/new-title`. Git reports a conflict in `index.html`.
+
+### Task 2: Resolve the conflict
+
+Edit `index.html` so that:
+
+- the conflicting line becomes exactly `  <title>Northwind Shop | Welcome Home</title>` (two spaces of indentation, as in the rest of the file),
+- all conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) are gone,
+- every other line of the file stays as it was.
+
+### Task 3: Commit the resolution
+
+Mark the file as resolved and commit the merge, so that `main` ends with a **merge commit** that has both branches as parents.
+
+### Task 4: Verify the history
+
+Save the graph of the history of all branches into `/home/user/merge-history.txt` by running:
+
+```
+git log --oneline --graph --all > /home/user/merge-history.txt
+```
+
+## Notes
+
+- Do not use `git merge -X ours` or `-X theirs`, and do not rebase: the result must be a real merge with your resolution.
+- `git status` tells you which files are in conflict and what to do next.
+
+## Expected outcome
+
+`main` ends in a merge commit of `feature/new-title`, `index.html` has the combined title and no conflict markers, and `merge-history.txt` shows the merge in the graph.
+
+ANSWER
+======
+```bash
+cd /home/user/website
+git switch main
+git merge feature/new-title          # CONFLICT (content): Merge conflict in index.html
+nano index.html
+```
+
+Replace the conflict block:
+
+```
+<<<<<<< HEAD
+  <title>Northwind Shop</title>
+=======
+  <title>Welcome Home</title>
+>>>>>>> feature/new-title
+```
+
+with:
+
+```
+  <title>Northwind Shop | Welcome Home</title>
+```
+
+Then:
+
+```bash
+git add index.html
+git commit --no-edit
+git log --oneline --graph --all > /home/user/merge-history.txt
+cat /home/user/merge-history.txt
+```
+
+APPROACH
+========
+1. `cd /home/user/website`, make sure you are on `main` (`git branch`).
+2. Run `git merge feature/new-title` and read the conflict message.
+3. Open `index.html` with `nano`, replace the whole conflict block (from `<<<<<<<` to `>>>>>>>`) with the single combined title line.
+4. `git add index.html` and `git commit --no-edit` (or `git commit` and save the prepared message).
+5. Check with `git log --oneline --graph --all`, then save it to `/home/user/merge-history.txt`.
+
+HINT
+====
+- `git merge feature/new-title` starts the merge and stops at the conflict.
+- In the file, the part between `<<<<<<< HEAD` and `=======` is your branch (main); the part between `=======` and `>>>>>>>` is the other branch.
+- After editing, `git add index.html` marks it as resolved, and `git commit` (with no message argument it opens an editor with a prepared message) creates the merge commit.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -uo pipefail
+cd /home/user/website
+git switch -q main
+git merge feature/new-title >/dev/null 2>&1
+python3 - <<'PY'
+import re
+text = open("index.html").read()
+text = re.sub(r"<<<<<<< HEAD\n.*?>>>>>>> feature/new-title\n", "  <title>Northwind Shop | Welcome Home</title>\n", text, flags=re.S)
+open("index.html", "w").write(text)
+PY
+git add index.html
+git commit -q --no-edit
+git log --oneline --graph --all > /home/user/merge-history.txt

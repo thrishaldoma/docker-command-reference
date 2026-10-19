@@ -1,0 +1,146 @@
+Topic: DevSecOps
+Topic ID: devsecops
+Question: 1
+Title: Push Images with Repository Secrets
+Lab ID: devsecops-registry-secrets
+Environment: docker
+Add-ons: gitea, registry
+Source: /opt/devops-labs/labs/16-devsecops/01-registry-secrets
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+A pipeline that publishes container images needs registry credentials. Writing them into the workflow file leaks them to everyone who can read the repository. Instead, store them as **repository secrets**: the runner injects them at run time and masks them in logs. You will build an image in CI and push it to a private registry using secrets.
+
+- Gitea: http://localhost:8801, username `student`, password `student@123!`
+- The repository `student/shop-web` is cloned to `/home/user/shop-web` (credentials saved). It contains `app.py` but no Dockerfile yet.
+- The private container registry is `registry:5000`. Its credentials are user `ci` and password `registry@123!`.
+
+## Tasks
+
+### Task 1: Add a Dockerfile
+
+Create a `Dockerfile` in the repository that builds the app from `python:3.15.0-slim`, copies `app.py` and runs it with `python3 app.py`.
+
+### Task 2: Store the credentials as secrets
+
+In Gitea, open the repository's **Settings**, then **Actions**, then **Secrets**, and add:
+
+- `REGISTRY_USERNAME` with the registry user
+- `REGISTRY_PASSWORD` with the registry password
+
+### Task 3: Write the publish workflow
+
+Create `.gitea/workflows/publish.yml` that runs on `push` and has one job named `publish` on `ubuntu-latest` that:
+
+1. checks out the repository with `actions/checkout@v7`
+2. logs in to `registry:5000` with `docker login`, reading the user and password from the two secrets (pass the password with `--password-stdin`)
+3. builds the image `registry:5000/shop/web:${{ github.sha }}`
+4. pushes that image
+
+The workflow must not contain the registry user name or password.
+
+### Task 4: Run it
+
+Commit and push. Wait until the run succeeds, then check that the registry has the image tagged with the commit ID.
+
+## Notes
+
+- `registry:5000` uses plain HTTP; the runner's Docker engine is already configured to trust it, because it is a local lab registry.
+- Secrets are not shown again after you save them, and they appear as `***` in run logs.
+
+## Expected outcome
+
+The repository has two secrets, the workflow uses them instead of hard-coded credentials, and the latest run pushed `shop/web` tagged with the latest commit ID.
+
+ANSWER
+======
+```bash
+cd /home/user/shop-web
+cat > Dockerfile <<'END'
+FROM python:3.15.0-slim
+COPY app.py /app/app.py
+CMD ["python3", "/app/app.py"]
+END
+```
+
+Add the secrets `REGISTRY_USERNAME` = `ci` and `REGISTRY_PASSWORD` = `registry@123!` under **Settings, Actions, Secrets** in Gitea.
+
+```bash
+mkdir -p .gitea/workflows
+cat > .gitea/workflows/publish.yml <<'END'
+name: Publish
+on: push
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Log in to the registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login registry:5000 -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+      - name: Build the image
+        run: docker build -t registry:5000/shop/web:${{ github.sha }} .
+      - name: Push the image
+        run: docker push registry:5000/shop/web:${{ github.sha }}
+END
+git add Dockerfile .gitea
+git commit -m "Build and publish the image"
+git push
+curl -s -u ci:'registry@123!' http://registry:5000/v2/shop/web/tags/list
+```
+
+APPROACH
+========
+1. Write a three-line Dockerfile (FROM, COPY, CMD) and test it locally with `docker build`.
+2. Add the two secrets in Gitea's repository settings.
+3. Write `publish.yml` with the checkout, login, build and push steps.
+4. `git add`, `git commit`, `git push`, and follow the run in the Actions tab.
+5. Query the registry's tag list to confirm the push.
+
+HINT
+====
+- In a workflow, `${{ secrets.NAME }}` inserts a secret and `${{ github.sha }}` the commit ID.
+- `echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login registry:5000 -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin`
+- List the tags with `curl -s -u ci:'registry@123!' http://registry:5000/v2/shop/web/tags/list`.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/shop-web
+cat > Dockerfile <<END
+FROM $IMAGE_PYTHON
+COPY app.py /app/app.py
+CMD ["python3", "/app/app.py"]
+END
+auth="Authorization: Basic $(printf '%s:%s' "$GITEA_USER" "$GITEA_PASSWORD" | base64 -w0)"
+for pair in "REGISTRY_USERNAME=$REGISTRY_USER" "REGISTRY_PASSWORD=$REGISTRY_PASSWORD"; do
+  name=${pair%%=*} value=${pair#*=}
+  body=$(python3 -c 'import json,sys; print(json.dumps({"data": sys.argv[1]}))' "$value")
+  curl -sf -H "$auth" -H 'Content-Type: application/json' -X PUT "$GITEA_URL/api/v1/repos/$GITEA_USER/shop-web/actions/secrets/$name" -d "$body" >/dev/null
+done
+mkdir -p .gitea/workflows
+cat > .gitea/workflows/publish.yml <<'END'
+name: Publish
+on: push
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Log in to the registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login registry:5000 -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+      - name: Build the image
+        run: docker build -t registry:5000/shop/web:${{ github.sha }} .
+      - name: Push the image
+        run: docker push registry:5000/shop/web:${{ github.sha }}
+END
+git add Dockerfile .gitea
+git commit -qm "Build and publish the image"
+git push -q

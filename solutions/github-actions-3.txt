@@ -1,0 +1,122 @@
+Topic: GitHub Actions
+Topic ID: github-actions
+Question: 3
+Title: Publish a Build Artifact
+Lab ID: gha-upload-artifact
+Environment: base
+Add-ons: gitea
+Source: /opt/devops-labs/labs/15-github-actions/03-upload-artifact
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+The output of a build should be kept and downloadable, so testers and deployment jobs use exactly what CI built. Workflows do that with **artifacts**. You will extend the workflow to upload the built application as an artifact, download it from the run, and run it.
+
+- Gitea: http://localhost:8801, username `student`, password `student@123!`
+- The repository `student/calculator` is cloned to `/home/user/calculator` (credentials saved).
+- Its workflow `.gitea/workflows/ci.yml` already installs, tests and builds `dist/calculator.pyz`.
+
+## Tasks
+
+### Task 1: Upload the artifact
+
+Add a final step to the `build` job that uses `actions/upload-artifact@v7` to upload:
+
+- artifact name: `calculator`
+- path: `dist/calculator.pyz`
+
+Commit and push, and wait for the run to succeed. The run page in Gitea then lists the artifact.
+
+### Task 2: Download it
+
+Download the `calculator` artifact from the run (the artifact link on the run page downloads a zip file) and save it as `/home/user/artifact/calculator.zip`.
+
+The browser saves downloads on your own computer, not in the lab. Downloading inside the lab is easier through the Gitea API, which needs the artifact's ID:
+
+```
+curl -s -u student:'student@123!' http://localhost:8801/api/v1/repos/student/calculator/actions/artifacts
+```
+
+and then `.../actions/artifacts/<id>/zip`. Use `curl -L -o <file>` to follow the redirect and save the zip.
+
+### Task 3: Run what CI built
+
+Unzip it in `/home/user/artifact/`, run `python3 calculator.pyz 6 x 7`, and save the output to `/home/user/artifact/result.txt`.
+
+## Notes
+
+- The `artifact` folder does not exist yet.
+
+## Expected outcome
+
+The latest run on `main` uploaded a `calculator` artifact containing `calculator.pyz`, which you downloaded and ran.
+
+ANSWER
+======
+```bash
+cd /home/user/calculator
+cat >> .gitea/workflows/ci.yml <<'END'
+      - name: Upload the build
+        uses: actions/upload-artifact@v7
+        with:
+          name: calculator
+          path: dist/calculator.pyz
+END
+git commit -am "Upload the build as an artifact" && git push
+```
+
+After the run succeeds:
+
+```bash
+mkdir -p /home/user/artifact && cd /home/user/artifact
+api=http://localhost:8801/api/v1/repos/student/calculator/actions/artifacts
+id=$(curl -s -u student:'student@123!' "$api" | jq '[.artifacts[] | select(.name=="calculator")][0].id')
+curl -s -L -u student:'student@123!' -o calculator.zip "$api/$id/zip"
+unzip -o calculator.zip
+python3 calculator.pyz 6 x 7 > result.txt
+cat result.txt     # 42
+```
+
+APPROACH
+========
+1. Add the upload step at the end of the job, commit and push.
+2. Wait for the run to finish; the run page shows the artifact.
+3. List the artifacts with the API, take the newest `calculator` artifact ID, and download the zip with `curl -L -o`.
+4. Unzip, run the app, save the output.
+
+HINT
+====
+- `uses: actions/upload-artifact@v7` takes inputs under `with:`: `name:` and `path:`.
+- `python3 -m json.tool` or `jq` makes the artifacts list readable; look for `"id"`.
+- `unzip calculator.zip` extracts the file.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/calculator
+cat >> .gitea/workflows/ci.yml <<'END'
+      - name: Upload the build
+        uses: actions/upload-artifact@v7
+        with:
+          name: calculator
+          path: dist/calculator.pyz
+END
+git commit -qam "Upload the build as an artifact" && git push -q
+sha=$(git rev-parse HEAD)
+api="$GITEA_URL/api/v1/repos/$GITEA_USER/calculator/actions"
+cred="$GITEA_USER:$GITEA_PASSWORD"
+for _ in $(seq 1 90); do
+  done=$(curl -sf -u "$cred" "$api/runs?limit=20" | python3 -c "import json,sys; d=json.load(sys.stdin); print(next((r['conclusion'] for r in d.get('workflow_runs') or [] if r['head_sha']=='$sha' and r['status']=='completed'), ''))")
+  [ -n "$done" ] && break
+  sleep 3
+done
+mkdir -p /home/user/artifact && cd /home/user/artifact
+id=$(curl -sf -u "$cred" "$api/artifacts" | python3 -c "import json,sys; print(next(a['id'] for a in json.load(sys.stdin)['artifacts'] if a['name']=='calculator'))")
+curl -sf -L -u "$cred" -o calculator.zip "$api/artifacts/$id/zip"
+unzip -oq calculator.zip
+python3 calculator.pyz 6 x 7 > result.txt

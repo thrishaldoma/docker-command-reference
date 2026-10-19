@@ -1,0 +1,111 @@
+Topic: Kubernetes Core Objects
+Topic ID: kubernetes-core-objects
+Question: 3
+Title: Rolling Update and Rollback
+Lab ID: k8s-rolling-update
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/09-kubernetes-core-objects/03-rolling-update
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Deployments update applications without downtime: a **rolling update** replaces old Pods with new ones a few at a time. If the new version misbehaves, a **rollback** returns to the previous version just as smoothly. You will deploy version 1 of an application, roll out version 2, verify it, and roll back to version 1.
+
+The application is podinfo. Its two versions are these images:
+
+- version 1: `stefanprodan/podinfo:6.14.1`
+- version 2: `stefanprodan/podinfo:6.15.0`
+
+## Tasks
+
+### Task 1: Deploy version 1
+
+Create a Deployment named `catalog` with `3` replicas, image `stefanprodan/podinfo:6.14.1` and a container named `podinfo`. Wait until it is ready.
+
+### Task 2: Roll out version 2
+
+Update the `podinfo` container of `catalog` to `stefanprodan/podinfo:6.15.0`. Watch the rollout until it completes.
+
+### Task 3: Verify version 2
+
+Confirm that all Pods run the new image. Save the output of `kubectl rollout history deployment/catalog` to `/home/user/rollout/history-after-update.txt`.
+
+### Task 4: Roll back
+
+Roll `catalog` back to the previous revision and wait until the rollback is complete.
+
+### Task 5: Record the result
+
+Save `kubectl rollout history deployment/catalog` again to `/home/user/rollout/history-after-rollback.txt`, and create `/home/user/rollout/result.txt` with:
+
+```
+current_image=<image the Deployment uses now>
+revisions=<number of revisions shown in the history now>
+```
+
+## Notes
+
+- The `rollout` folder does not exist yet.
+- A rollback creates a new revision: the old revision number moves to the top of the history.
+
+## Expected outcome
+
+`catalog` runs version 1 again with 3 ready Pods, after a completed rollout to version 2, and the history files show the revisions.
+
+ANSWER
+======
+```bash
+mkdir -p /home/user/rollout
+kubectl create deployment catalog --image=stefanprodan/podinfo:6.14.1 --replicas=3
+kubectl rollout status deployment/catalog
+
+kubectl set image deployment/catalog podinfo=stefanprodan/podinfo:6.15.0
+kubectl rollout status deployment/catalog
+kubectl get pods -l app=catalog -o jsonpath='{range .items[*]}{.spec.containers[0].image}{"\n"}{end}'
+kubectl rollout history deployment/catalog > /home/user/rollout/history-after-update.txt
+
+kubectl rollout undo deployment/catalog
+kubectl rollout status deployment/catalog
+kubectl rollout history deployment/catalog > /home/user/rollout/history-after-rollback.txt
+
+cat > /home/user/rollout/result.txt <<'END'
+current_image=stefanprodan/podinfo:6.14.1
+revisions=2
+END
+```
+
+After the rollback the history lists two revisions (2 and 3): revision 1 was renumbered to 3 because it is current again.
+
+APPROACH
+========
+1. Create the deployment with version 1 and wait with `kubectl rollout status`.
+2. `kubectl set image` to version 2, then `kubectl rollout status` again.
+3. Check the images with `kubectl get pods -o jsonpath='{..image}'` or `kubectl describe`.
+4. Save the history, run `kubectl rollout undo deployment/catalog`, wait, and save the history again.
+5. Write `result.txt`.
+
+HINT
+====
+- `kubectl create deployment catalog --image=... --replicas=3` names the container after the image (`podinfo`).
+- `kubectl set image deployment/catalog podinfo=NEW_IMAGE` starts a rolling update.
+- `kubectl rollout status deployment/catalog` waits for it, `kubectl rollout history` lists revisions and `kubectl rollout undo` rolls back.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+mkdir -p /home/user/rollout
+kubectl create deployment catalog --image="$IMAGE_PODINFO_PREVIOUS" --replicas=3
+kubectl rollout status deployment/catalog --timeout=300s
+kubectl set image deployment/catalog podinfo="$IMAGE_PODINFO"
+kubectl rollout status deployment/catalog --timeout=300s
+kubectl rollout history deployment/catalog > /home/user/rollout/history-after-update.txt
+kubectl rollout undo deployment/catalog
+kubectl rollout status deployment/catalog --timeout=300s
+kubectl rollout history deployment/catalog > /home/user/rollout/history-after-rollback.txt
+printf 'current_image=%s\nrevisions=2\n' "$IMAGE_PODINFO_PREVIOUS" > /home/user/rollout/result.txt

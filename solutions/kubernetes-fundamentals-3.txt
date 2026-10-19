@@ -1,0 +1,132 @@
+Topic: Kubernetes Fundamentals
+Topic ID: kubernetes-fundamentals
+Question: 3
+Title: Kubernetes Architecture
+Lab ID: k8s-architecture
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/08-kubernetes-fundamentals/03-architecture
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+A cluster diagram shows boxes for the API server, scheduler, controller manager, etcd, kubelet and kubectl, with arrows between them. Instead of drawing it, you will build the same picture as structured answers: what each component does, where it runs, and in which order the components act when you create a Deployment.
+
+The files you need are in `/home/user/architecture/`:
+
+- `components.txt`: the six components, `C1` to `C6`
+- `roles.txt`: role descriptions with IDs `R1`, `R2`, ... (more roles than components, so some are decoys)
+- `steps.txt`: the steps that happen when you run `kubectl apply` for a Deployment, in a shuffled order, with IDs `S1`, `S2`, ...
+
+## Tasks
+
+### Task 1: Match each component to its role
+
+Create `/home/user/architecture/roles-answer.txt` with one line per component, `C1=R4` style.
+
+### Task 2: Place each component
+
+Create `/home/user/architecture/placement.txt` with one line per component, saying where it runs:
+
+- `control-plane`: part of the cluster's control plane
+- `node`: runs on every worker node
+- `client`: runs on the user's machine, outside the cluster
+
+Format: `C1=control-plane`.
+
+### Task 3: Order the request flow
+
+Create `/home/user/architecture/flow.txt` with the step IDs from `steps.txt` in the order they happen, one per line.
+
+### Task 4: Connect it to this cluster
+
+Using `kubectl`, create `/home/user/architecture/live.txt` with:
+
+```
+api_server_port=<TCP port of the API server that kubectl talks to>
+kubelet_version=<kubelet version reported for the node>
+container_runtime=<container runtime reported for the node, for example containerd://1.7.0>
+```
+
+## Notes
+
+- k3s packages the control plane components into one process, but each one still does the same job as in any Kubernetes cluster.
+
+## Expected outcome
+
+Four answer files that together describe the cluster architecture and how a request flows through it.
+
+ANSWER
+======
+The IDs are shuffled per session; match them by meaning.
+
+| Component | Role | Runs on |
+| --- | --- | --- |
+| kubectl | Command line client that sends requests to the API server | client |
+| API server | Front door of the cluster: validates requests and is the only component that talks to etcd | control-plane |
+| etcd | Consistent key-value store that holds the whole cluster state | control-plane |
+| scheduler | Picks a node for every pod that has no node yet | control-plane |
+| controller manager | Runs controllers that make the actual state match the desired state, for example creating ReplicaSets and pods | control-plane |
+| kubelet | Agent on each node that starts the pod's containers and reports their status | node |
+
+Request flow for `kubectl apply` of a Deployment:
+
+1. kubectl sends the Deployment to the API server.
+2. The API server validates it and stores it in etcd.
+3. The controller manager notices the new Deployment and creates a ReplicaSet and pods.
+4. The scheduler assigns each new pod to a node.
+5. The kubelet on that node starts the containers through the container runtime.
+6. The kubelet reports the pod status back to the API server.
+
+Live facts:
+
+```bash
+kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}'   # https://k3s:6443
+kubectl get nodes -o wide                                                    # VERSION and CONTAINER-RUNTIME
+```
+
+APPROACH
+========
+1. Read `components.txt` and `roles.txt`, and match each component to the role that only it performs.
+2. Decide for each component whether it is part of the control plane, runs on every node, or runs on your machine.
+3. Read `steps.txt`. The flow always starts at the client and ends on the node; the API server stores every change before anyone acts on it.
+4. Use `kubectl config view --minify` and `kubectl get nodes -o wide` for `live.txt`.
+
+HINT
+====
+- Only one component stores the cluster state, and only one is the front door that every other component talks to.
+- The scheduler decides where a pod should run; the kubelet makes it actually run on its node.
+- Controllers watch for differences between what you asked for and what exists, and act to close the gap.
+- `kubectl get nodes -o wide` shows the kubelet version and the container runtime. `kubectl config view --minify` shows the server URL.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/architecture
+python3 - <<'PY'
+import re
+comps = dict(re.findall(r"^(C\d+): (.+)$", open("components.txt").read(), re.M))
+roles = dict(re.findall(r"^(R\d+): (.+)$", open("roles.txt").read(), re.M))
+steps = dict(re.findall(r"^(S\d+): (.+)$", open("steps.txt").read(), re.M))
+key = {"kubectl": "command line client", "API server": "front door", "etcd": "key-value store",
+       "scheduler": "Picks a node", "controller manager": "control loops", "kubelet": "agent on each node"}
+place = {"kubectl": "client", "kubelet": "node"}
+with open("roles-answer.txt", "w") as r, open("placement.txt", "w") as p:
+    for cid, name in comps.items():
+        rid = next(k for k, v in roles.items() if key[name] in v)
+        r.write(f"{cid}={rid}\n")
+        p.write(f"{cid}={place.get(name, 'control-plane')}\n")
+order = ["kubectl sends", "validates", "controller manager sees", "scheduler assigns", "starts the containers", "reports"]
+with open("flow.txt", "w") as f:
+    for word in order:
+        f.write(next(k for k, v in steps.items() if word in v) + "\n")
+PY
+server=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
+printf 'api_server_port=%s\nkubelet_version=%s\ncontainer_runtime=%s\n' "${server##*:}" \
+  "$(kubectl get nodes -o jsonpath='{.items[0].status.nodeInfo.kubeletVersion}')" \
+  "$(kubectl get nodes -o jsonpath='{.items[0].status.nodeInfo.containerRuntimeVersion}')" > live.txt

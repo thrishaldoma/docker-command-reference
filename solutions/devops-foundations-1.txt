@@ -1,0 +1,123 @@
+Topic: DevOps Foundations
+Topic ID: devops-foundations
+Question: 1
+Title: Map a CI/CD Workflow
+Lab ID: devops-cicd-workflow
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/01-devops-foundations/01-cicd-workflow
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+BookNest is a small online bookstore. Today a developer builds the app on a laptop, copies it to the server by hand and checks the website manually after each release. The team wants a simple CI/CD workflow that takes every code commit all the way to production, automatically.
+
+Your job is to describe that workflow in three small text files. The scenario and a list of activities are in `/home/user/cicd/`:
+
+- `scenario.md` describes BookNest and how it is released today.
+- `activities.md` lists eight activities, each with an ID such as `A1`.
+
+## Tasks
+
+### Task 1: Order the stages
+
+Create `/home/user/cicd/pipeline.txt` with the six workflow stages in the order they run, one per line, using exactly these names:
+
+`build`, `commit`, `deploy`, `monitor`, `package`, `test`
+
+### Task 2: Draw the workflow
+
+Create `/home/user/cicd/diagram.txt` containing a single line that draws the workflow as a flow from left to right, with ` -> ` between stages. For example, a two-stage flow would be:
+
+```
+first -> second
+```
+
+### Task 3: Label the activities
+
+Create `/home/user/cicd/activities.txt` that assigns every activity in `activities.md` to the stage it belongs to. Use one line per activity, in the form `ID=stage`, for example:
+
+```
+A1=build
+```
+
+All eight activities must be listed, and each stage name must be one of the six names from Task 1.
+
+## Notes
+
+- File names and stage names are lowercase.
+- Password for sudo, if you ever need it: `user@123!`
+
+## Expected outcome
+
+Three files in `/home/user/cicd/`: the stages in order, a one-line diagram of the flow, and every activity labelled with its stage.
+
+ANSWER
+======
+Stages and diagram:
+
+```bash
+cd /home/user/cicd
+printf '%s\n' commit build test package deploy monitor > pipeline.txt
+echo 'commit -> build -> test -> package -> deploy -> monitor' > diagram.txt
+```
+
+The activity IDs are shuffled in every lab session, so match each activity by its text:
+
+| Activity | Stage |
+| --- | --- |
+| Developer pushes a change to the main branch | commit |
+| Install dependencies and compile the source code | build |
+| Run the unit tests | test |
+| Run integration tests against a test database | test |
+| Create a versioned container image and push it to the registry | package |
+| Roll the new image out to the production servers | deploy |
+| Watch the error rate and latency dashboards | monitor |
+| Alert the on-call engineer when the site returns errors | monitor |
+
+Then write one line per activity with the IDs from your `activities.md`, for example:
+
+```bash
+nano activities.txt      # A1=test, A2=deploy, ... one per line
+cat activities.txt
+```
+
+APPROACH
+========
+1. Read `scenario.md` and `activities.md` with `cat` or `less`.
+2. Write the stages in order into `pipeline.txt`, for example with `nano` or with `printf '%s\n' ... > pipeline.txt`.
+3. Join the same stages with ` -> ` on one line and save it as `diagram.txt`.
+4. Go through the activities one by one and write `ID=stage` lines into `activities.txt`.
+5. Check your files with `cat`.
+
+HINT
+====
+- A workflow starts when a developer saves work to version control, and ends with watching the running system.
+- You cannot test what has not been built, and you package (for example as a container image) only what passed the tests.
+- Read each activity and ask: "is this producing something, checking something, shipping something or watching something?"
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/cicd
+printf '%s\n' commit build test package deploy monitor > pipeline.txt
+echo 'commit -> build -> test -> package -> deploy -> monitor' > diagram.txt
+: > activities.txt
+while IFS= read -r line; do
+  id=$(sed -E 's/^- (A[0-9]+): .*/\1/' <<<"$line")
+  text=${line#*: }
+  case "$text" in
+    *pushes*) stage=commit ;;
+    *compile*) stage=build ;;
+    *"Roll the new"*) stage=deploy ;;
+    *tests*) stage=test ;;
+    *image*) stage=package ;;
+    *dashboards*|*on-call*) stage=monitor ;;
+  esac
+  echo "$id=$stage" >> activities.txt
+done < <(grep '^- A' activities.md)

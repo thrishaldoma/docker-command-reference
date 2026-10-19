@@ -1,0 +1,160 @@
+Topic: Storage, Autoscaling and Probes
+Topic ID: storage-autoscaling-probes
+Question: 1
+Title: Keep Data with a PersistentVolumeClaim
+Lab ID: k8s-persistent-volume
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/12-storage-autoscaling-probes/01-persistent-volume
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+A Pod's own file system is thrown away when the Pod is deleted. To keep data, a Pod mounts a volume backed by a **PersistentVolumeClaim** (PVC), which asks the cluster for storage. The cluster's default storage class, `local-path`, provisions it automatically. You will write a file to such a volume, recreate the Pod, and check that the file is still there.
+
+## Tasks
+
+### Task 1: Request storage
+
+Create a PersistentVolumeClaim:
+
+- name: `notes-pvc`
+- access mode: `ReadWriteOnce`
+- size: `1Gi`
+- storage class: `local-path`
+
+### Task 2: Mount it in a Pod
+
+Write `/home/user/storage/pod.yaml` with a Pod:
+
+- name: `notes-writer`
+- image: `busybox:1.38.0`, command `sleep 3600`
+- the claim `notes-pvc` mounted at `/data`
+
+Create the Pod and wait until it is running. The claim becomes `Bound` once the Pod uses it.
+
+### Task 3: Write a file
+
+Write the text `Persistent storage works` to `/data/notes.txt` inside the Pod.
+
+### Task 4: Recreate the Pod
+
+Delete the Pod `notes-writer`, then create it again from the same `pod.yaml`.
+
+### Task 5: Verify
+
+Read `/data/notes.txt` in the new Pod and save its contents to `/home/user/storage/after-recreate.txt`.
+
+## Notes
+
+- Leave the new Pod running when you submit.
+
+## Expected outcome
+
+A bound PVC `notes-pvc`, and a recreated Pod `notes-writer` that still finds the file written by the old Pod.
+
+ANSWER
+======
+```bash
+mkdir -p /home/user/storage && cd /home/user/storage
+cat <<'END' | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notes-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+END
+cat > pod.yaml <<'END'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: notes-writer
+spec:
+  containers:
+    - name: writer
+      image: busybox:1.38.0
+      command: ["sleep", "3600"]
+      volumeMounts:
+        - name: data
+          mountPath: /data
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: notes-pvc
+END
+kubectl apply -f pod.yaml
+kubectl wait --for=condition=Ready pod/notes-writer --timeout=120s
+kubectl exec notes-writer -- sh -c 'echo "Persistent storage works" > /data/notes.txt'
+
+kubectl delete pod notes-writer
+kubectl apply -f pod.yaml
+kubectl wait --for=condition=Ready pod/notes-writer --timeout=120s
+kubectl exec notes-writer -- cat /data/notes.txt > after-recreate.txt
+```
+
+APPROACH
+========
+1. Apply a PVC manifest, then check `kubectl get pvc` (it stays Pending until a Pod uses it).
+2. Write `pod.yaml`, apply it, and wait with `kubectl wait --for=condition=Ready pod/notes-writer`.
+3. Write the file with `kubectl exec`.
+4. `kubectl delete pod notes-writer`, then `kubectl apply -f /home/user/storage/pod.yaml` again and wait.
+5. `kubectl exec notes-writer -- cat /data/notes.txt > /home/user/storage/after-recreate.txt`
+
+HINT
+====
+- A PVC manifest has `kind: PersistentVolumeClaim` with `spec.accessModes`, `spec.storageClassName` and `spec.resources.requests.storage`.
+- In the Pod: `volumes: - name: data persistentVolumeClaim: {claimName: notes-pvc}` and `volumeMounts: - name: data mountPath: /data`.
+- `kubectl exec notes-writer -- sh -c 'echo "text" > /data/notes.txt'` writes the file.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+mkdir -p /home/user/storage && cd /home/user/storage
+cat <<'END' | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: notes-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+END
+cat > pod.yaml <<END
+apiVersion: v1
+kind: Pod
+metadata:
+  name: notes-writer
+spec:
+  containers:
+    - name: writer
+      image: $IMAGE_BUSYBOX
+      command: ["sleep", "3600"]
+      volumeMounts:
+        - name: data
+          mountPath: /data
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: notes-pvc
+END
+kubectl apply -f pod.yaml
+kubectl wait --for=condition=Ready pod/notes-writer --timeout=300s
+kubectl exec notes-writer -- sh -c 'echo "Persistent storage works" > /data/notes.txt'
+sleep 2
+kubectl delete pod notes-writer --wait=true
+kubectl apply -f pod.yaml
+kubectl wait --for=condition=Ready pod/notes-writer --timeout=300s
+kubectl exec notes-writer -- cat /data/notes.txt > after-recreate.txt

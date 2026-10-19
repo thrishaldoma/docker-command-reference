@@ -1,0 +1,123 @@
+Topic: Monitoring, Observability and GitOps
+Topic ID: monitoring-gitops
+Question: 1
+Title: Scrape Application Metrics with Prometheus
+Lab ID: monitoring-prometheus-scrape
+Environment: base
+Add-ons: prometheus
+Source: /opt/devops-labs/labs/19-monitoring-gitops/01-prometheus-scrape
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Monitoring starts with metrics: numbers an application exposes about itself, such as how many requests it served and how long they took. **Prometheus** collects them by regularly **scraping** an HTTP endpoint. In this lab you connect Prometheus to a running service and confirm that the data arrives.
+
+The service `orders-api` already runs on this machine. It exposes its metrics at `http://localhost:8000/metrics`. Other machines on the lab network reach this machine as `lab`, so Prometheus sees the service at `lab:8000`.
+
+Prometheus runs at http://localhost:8803 (open it with the **Open Prometheus** button). Its configuration file is mounted on this machine at `/etc/prometheus/prometheus.yml`, and you can edit it directly.
+
+## Tasks
+
+### Task 1: Look at the metrics
+
+Run `curl -s http://localhost:8000/metrics` and look at the metric names, their types (`# TYPE` lines) and labels.
+
+### Task 2: Add a scrape job
+
+Add a job to `/etc/prometheus/prometheus.yml` under `scrape_configs`:
+
+- `job_name: orders-api`
+- `scrape_interval: 5s`
+- target `lab:8000` (the default path `/metrics` is right)
+
+Keep the existing `prometheus` job.
+
+### Task 3: Reload Prometheus
+
+Tell Prometheus to reload its configuration:
+
+```
+curl -X POST http://localhost:8803/-/reload
+```
+
+### Task 4: Verify the target
+
+In the Prometheus web interface, open **Status**, then **Target health**, and wait until the `orders-api` target is **UP**. Then run a query such as `http_requests_total` in the **Query** page.
+
+### Task 5: Record two metrics
+
+Create `/home/user/metrics.txt` with:
+
+```
+target_health=<the health shown for the orders-api target>
+counter_metric=<the name of a counter that orders-api exposes>
+gauge_metric=<the name of a gauge that orders-api exposes>
+```
+
+## Notes
+
+- YAML is sensitive to indentation: the new job is a list item at the same level as the existing `- job_name: prometheus`.
+- If the reload fails, Prometheus keeps the old configuration and says why: `curl -X POST ...` prints the error.
+
+## Expected outcome
+
+Prometheus scrapes `orders-api` successfully every 5 seconds, and `metrics.txt` names a counter and a gauge that really arrive in Prometheus.
+
+ANSWER
+======
+```bash
+curl -s http://localhost:8000/metrics | grep '# TYPE'
+cat >> /etc/prometheus/prometheus.yml <<'END'
+
+  - job_name: orders-api
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["lab:8000"]
+END
+cat /etc/prometheus/prometheus.yml
+curl -X POST http://localhost:8803/-/reload
+curl -s http://localhost:8803/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health}'
+
+cat > /home/user/metrics.txt <<'END'
+target_health=up
+counter_metric=http_requests_total
+gauge_metric=orders_in_queue
+END
+```
+
+APPROACH
+========
+1. `curl -s localhost:8000/metrics | grep TYPE` lists every metric with its type.
+2. Edit `/etc/prometheus/prometheus.yml` with `nano` and add the job under `scrape_configs`.
+3. Reload with the `curl -X POST .../-/reload` command.
+4. Check the target page until the state is UP (or `curl -s http://localhost:8803/api/v1/targets`).
+5. Write `metrics.txt`.
+
+HINT
+====
+- A scrape job looks like this:
+
+```yaml
+  - job_name: orders-api
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["lab:8000"]
+```
+
+- In the metrics output, `# TYPE http_requests_total counter` says which kind each metric is.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+printf '\n  - job_name: orders-api\n    scrape_interval: 5s\n    static_configs:\n      - targets: ["lab:8000"]\n' >> /etc/prometheus/prometheus.yml
+curl -sf -X POST "$PROMETHEUS_URL/-/reload"
+for _ in $(seq 1 30); do
+  curl -s "$PROMETHEUS_URL/api/v1/targets" | python3 -c 'import json,sys; t=json.load(sys.stdin)["data"]["activeTargets"]; sys.exit(0 if any(x["labels"]["job"]=="orders-api" and x["health"]=="up" for x in t) else 1)' && break
+  sleep 2
+done
+printf 'target_health=up\ncounter_metric=http_requests_total\ngauge_metric=orders_in_queue\n' > /home/user/metrics.txt

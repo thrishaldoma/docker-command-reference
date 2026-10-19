@@ -1,0 +1,143 @@
+DEVOPS LABS — QUESTIONS AND SOLUTIONS
+Source: running devops-labs-app-1 container at http://localhost:8800
+Extracted: 2026-10-19
+Coverage: 64 questions across 19 topics; matches the complete live API catalog.
+
+Naming: <topic-id>-<question-order>.txt, for example linux-2.txt.
+Question order comes from the app metadata; numbering restarts per topic.
+
+Each file includes the topic, question, answer, approach, hint, and original
+solve.sh source. Questions and help text are exported from the live API,
+which fills in configured image versions, service URLs and lab credentials.
+Source formatting and code indentation are preserved inside these text files.
+
+Use the ANSWER section in the corresponding initialized DevOps Labs session.
+The original solve.sh appendix is automation source: it expects the lab
+runner environment, including variables such as SUDO_PASSWORD and IMAGE_*,
+prepared files and any helper services. It is not a standalone host script.
+These are the bundled reference answers; extraction checks completeness and
+source fidelity, but does not execute the 64 solutions or grade lab outcomes.
+
+Upstream: https://github.com/brixdorf/devops-labs
+Copyright (c) 2026 Romit Raj Sahu. See LICENSE.txt for the MIT license.
+
+DevOps Foundations (devops-foundations) — 3 questions
+CI/CD stages, microservices trade-offs and a DevOps adoption roadmap, written as checkable answers.
+  devops-foundations-1.txt — Map a CI/CD Workflow
+  devops-foundations-2.txt — Monolith or Microservices
+  devops-foundations-3.txt — DevOps Roadmap for a Small Team
+
+Linux (linux) — 6 questions
+Navigating the file system, files and directories, users, groups, permissions and services.
+  linux-1.txt — Basic Linux Commands
+  linux-2.txt — Ownership and Permission Audit for Sensitive Files
+  linux-3.txt — Directories and Files in Practice
+  linux-4.txt — Organize a Project Directory
+  linux-5.txt — Users, Groups and a Shared Project Directory
+  linux-6.txt — Diagnose and Fix a Failing Service
+
+Shell Scripting (shell-scripting) — 5 questions
+Writing bash scripts with arguments, checks, functions and loops.
+  shell-scripting-1.txt — Hello, World!
+  shell-scripting-2.txt — Your First Documented Script
+  shell-scripting-3.txt — Count Files and Directories
+  shell-scripting-4.txt — Check a File's Permissions
+  shell-scripting-5.txt — Reusable System Health Script
+
+Networking (networking) — 3 questions
+Inspecting interfaces and routes, troubleshooting services, DNS and HTTP.
+  networking-1.txt — Inspect Addresses, Routes and Ports
+  networking-2.txt — Troubleshoot Web Services with ping, ss and curl
+  networking-3.txt — Resolve Names and Test HTTP and HTTPS
+
+Git and GitHub (git) — 5 questions
+Branches, history, pushing to a remote, pull requests and merge conflicts.
+  git-1.txt — Prepare a Feature Branch
+  git-2.txt — Audit a Repository's History
+  git-3.txt — Create a Repository and Push It
+  git-4.txt — Feature Branch and Pull Request
+  git-5.txt — Resolve a Merge Conflict
+
+Docker (docker) — 3 questions
+Running containers, writing Dockerfiles and building images.
+  docker-1.txt — Run and Inspect an Nginx Container
+  docker-2.txt — Build an Image for a Web Page
+  docker-3.txt — Keep Secrets Out of the Image and Configure It with ENV
+
+Docker Networking and Volumes (docker-networking-volumes) — 3 questions
+Custom networks, named volumes and multi-container apps with Compose.
+  docker-networking-volumes-1.txt — Talk Between Containers by Name
+  docker-networking-volumes-2.txt — Persist Database Data with a Named Volume
+  docker-networking-volumes-3.txt — Run a Web App and Database with Compose
+
+Kubernetes Fundamentals (kubernetes-fundamentals) — 3 questions
+Exploring a cluster, deploying a workload and the control plane components.
+  kubernetes-fundamentals-1.txt — Explore a Kubernetes Cluster
+  kubernetes-fundamentals-2.txt — Deploy and Inspect a Web Application
+  kubernetes-fundamentals-3.txt — Kubernetes Architecture
+
+Kubernetes Core Objects (kubernetes-core-objects) — 3 questions
+Pods, Deployments, scaling, rolling updates and rollbacks.
+  kubernetes-core-objects-1.txt — Create and Inspect a Pod
+  kubernetes-core-objects-2.txt — Scale a Deployment Up and Down
+  kubernetes-core-objects-3.txt — Rolling Update and Rollback
+
+Kubernetes Services (kubernetes-services) — 3 questions
+ClusterIP and NodePort Services, selectors, ports and endpoints.
+  kubernetes-services-1.txt — ClusterIP Service and Endpoints
+  kubernetes-services-2.txt — Reach an App Through a NodePort
+  kubernetes-services-3.txt — Service Port and Target Port
+
+Ingress, ConfigMaps and Secrets (ingress-configmaps-secrets) — 3 questions
+Routing with Ingress and configuring apps with ConfigMaps and Secrets.
+  ingress-configmaps-secrets-1.txt — Route Traffic with an Ingress
+  ingress-configmaps-secrets-2.txt — Configure an App with a ConfigMap
+  ingress-configmaps-secrets-3.txt — Use a Secret Without Hard-Coding It
+
+Storage, Autoscaling and Probes (storage-autoscaling-probes) — 3 questions
+Persistent volumes, health probes and the Horizontal Pod Autoscaler.
+  storage-autoscaling-probes-1.txt — Keep Data with a PersistentVolumeClaim
+  storage-autoscaling-probes-2.txt — Readiness and Liveness Probes
+  storage-autoscaling-probes-3.txt — Autoscale with a HorizontalPodAutoscaler
+
+Kubernetes Troubleshooting (kubernetes-troubleshooting) — 3 questions
+Diagnosing and fixing broken workloads and Services.
+  kubernetes-troubleshooting-1.txt — Fix an ImagePullBackOff
+  kubernetes-troubleshooting-2.txt — Fix a CrashLoopBackOff
+  kubernetes-troubleshooting-3.txt — Fix a Service with the Wrong Selector
+
+Helm (helm) — 3 questions
+Writing charts, configurable values, upgrades and rollbacks.
+  helm-1.txt — Create a Helm Chart
+  helm-2.txt — Deploy a Chart with Your Own Values
+  helm-3.txt — Upgrade and Roll Back a Helm Release
+
+GitHub Actions (github-actions) — 3 questions
+Workflows that build, test and publish artifacts, using Gitea Actions.
+  github-actions-1.txt — Build on Every Push
+  github-actions-2.txt — Let Failing Tests Stop the Pipeline
+  github-actions-3.txt — Publish a Build Artifact
+
+DevSecOps (devsecops) — 3 questions
+Secure pipelines: secrets, security scanning and deployment gates.
+  devsecops-1.txt — Push Images with Repository Secrets
+  devsecops-2.txt — Security Scans as a Required Gate
+  devsecops-3.txt — Block Deployments with Image Scanning
+
+Terraform (terraform) — 3 questions
+Configuration, variables, outputs, plans and state.
+  terraform-1.txt — Your First Terraform Configuration
+  terraform-2.txt — Variables, tfvars Files and Outputs
+  terraform-3.txt — Plans, State and What Not to Commit
+
+Cloud with Terraform (cloud-terraform) — 3 questions
+Cloud networks, compute and security groups on a local AWS stand-in.
+  cloud-terraform-1.txt — Design a Cloud Network
+  cloud-terraform-2.txt — Provision a Network and a Server, Then Destroy Them
+  cloud-terraform-3.txt — Open Only the Port You Need
+
+Monitoring, Observability and GitOps (monitoring-gitops) — 3 questions
+Prometheus metrics, Grafana dashboards and GitOps with Argo CD.
+  monitoring-gitops-1.txt — Scrape Application Metrics with Prometheus
+  monitoring-gitops-2.txt — Build a Grafana Dashboard for Rate, Errors and Latency
+  monitoring-gitops-3.txt — GitOps with Argo CD

@@ -1,0 +1,118 @@
+Topic: Git and GitHub
+Topic ID: git
+Question: 3
+Title: Create a Repository and Push It
+Lab ID: git-publish-repository
+Environment: base
+Add-ons: gitea
+Source: /opt/devops-labs/labs/05-git/03-publish-repository
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+You wrote a small to-do application and now want it under version control and published on the team's Git server. In this lab, a local **Gitea** server stands in for GitHub. Open it from the **Open Gitea** button above, or at http://localhost:8801.
+
+Gitea account (already created for you):
+
+- Username: `student`
+- Password: `student@123!`
+
+The application files are in `/home/user/todo-app/`. The folder is not a Git repository yet.
+
+## Tasks
+
+### Task 1: Initialize the repository
+
+Turn `/home/user/todo-app` into a Git repository whose branch is named `main`. Set your name and email in Git (any values, but the email must look like an email address).
+
+### Task 2: Add a README
+
+Create `/home/user/todo-app/README.md`. Its first line must be exactly `# Todo App`, followed by at least one line that describes the application.
+
+### Task 3: Make at least three meaningful commits
+
+Commit the work in **at least three** separate commits. Each commit message must:
+
+- have at least three words, and
+- be different from the other messages.
+
+For example: `Add to-do list module`, `Add README with usage`, `Add tests for the to-do list`.
+
+### Task 4: Push to Gitea
+
+1. Create a repository named `todo-app` in Gitea under your account (with the **+** menu, then **New Repository**). Leave it empty: do not add a README or license there.
+2. Add it as the remote named `origin`, using the address `http://localhost:8801/student/todo-app.git`.
+3. Push `main` and set it to track `origin/main`.
+
+Git asks for your username and password when you push.
+
+## Notes
+
+- Commit all files in the folder, including the README.
+- Everything you push must be committed: the latest local commit and the latest commit on Gitea must be the same.
+
+## Expected outcome
+
+The `todo-app` repository on Gitea contains your README and at least three meaningful commits, identical to your local `main` branch.
+
+ANSWER
+======
+```bash
+cd /home/user/todo-app
+git init -b main
+git config user.name "Student"
+git config user.email "student@example.com"
+
+git add todo.py
+git commit -m "Add to-do list module"
+git add test_todo.py
+git commit -m "Add tests for the to-do list"
+printf '# Todo App\n\nA tiny command line to-do list written in Python.\n' > README.md
+git add README.md
+git commit -m "Add README with usage notes"
+```
+
+Create the empty repository `todo-app` in Gitea (http://localhost:8801, **+** then **New Repository**), then:
+
+```bash
+git remote add origin http://localhost:8801/student/todo-app.git
+git push -u origin main        # username student, password student@123!
+```
+
+APPROACH
+========
+1. `cd /home/user/todo-app` and run `git init -b main`.
+2. Set `user.name` and `user.email`.
+3. Commit the application file, then the tests, each with a clear message.
+4. Write `README.md` with `nano`, then commit it.
+5. In Gitea, create the empty `todo-app` repository.
+6. Add the remote and run `git push -u origin main`, entering the username and password when asked.
+7. Refresh the repository page in Gitea and check the commits.
+
+HINT
+====
+- `git init -b main` creates a repository with a `main` branch.
+- `git config user.name "Your Name"` and `git config user.email you@example.com` set your identity.
+- Commit in steps: `git add todo.py && git commit -m "..."`, then the tests, then the README.
+- `git remote add origin URL` and `git push -u origin main` push and set the upstream branch.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/todo-app
+git init -q -b main
+git config user.name "Lab Student"
+git config user.email "student@example.com"
+git add todo.py && git commit -q -m "Add to-do list module"
+git add test_todo.py && git commit -q -m "Add tests for the to-do list"
+printf '# Todo App\n\nA tiny command line to-do list written in Python.\n' > README.md
+git add README.md && git commit -q -m "Add README with usage notes"
+auth="Authorization: Basic $(printf '%s:%s' "$GITEA_USER" "$GITEA_PASSWORD" | base64 -w0)"
+curl -sf -H "$auth" -H 'Content-Type: application/json' -X POST "$GITEA_URL/api/v1/user/repos" -d '{"name":"todo-app"}' >/dev/null
+git remote add origin "$GITEA_URL/$GITEA_USER/todo-app.git"
+git -c "http.extraHeader=$auth" push -q -u origin main

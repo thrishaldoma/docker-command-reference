@@ -1,0 +1,90 @@
+Topic: Kubernetes Troubleshooting
+Topic ID: kubernetes-troubleshooting
+Question: 1
+Title: Fix an ImagePullBackOff
+Lab ID: k8s-image-pull-backoff
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/13-kubernetes-troubleshooting/01-image-pull
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Scenario
+
+A teammate deployed the `catalog` service before going on holiday, and its Pods never started. Your job is to find out why with `kubectl get`, `kubectl describe` and the cluster events, fix the Deployment, and confirm that it recovers.
+
+## Tasks
+
+### Task 1: Diagnose
+
+Look at the `catalog` Pods and their events. Find the status the Pods are stuck in and the reason in the events.
+
+### Task 2: Record the diagnosis
+
+Create `/home/user/diagnosis.txt` with:
+
+```
+pod_status=<the status shown in the STATUS column of kubectl get pods>
+broken_image=<the image the Deployment tries to use>
+```
+
+### Task 3: Fix the Deployment
+
+The `catalog` container should run `nginx:1.30.6-alpine`. Correct the image of the existing Deployment (do not delete and recreate it).
+
+### Task 4: Verify the recovery
+
+Wait until all `catalog` replicas are available, then save the cluster events for the namespace to `/home/user/events.txt` with `kubectl get events --sort-by=.lastTimestamp`.
+
+## Notes
+
+- `ImagePullBackOff` means Kubernetes tried to pull the image, failed, and is now waiting before it tries again.
+
+## Expected outcome
+
+`catalog` runs all its replicas with the correct image, and your diagnosis names the status and the broken image.
+
+ANSWER
+======
+```bash
+kubectl get pods                                  # ErrImagePull, then ImagePullBackOff
+kubectl describe pod -l app=catalog | tail -20     # Failed to pull image ... not found
+kubectl get deployment catalog -o jsonpath='{.spec.template.spec.containers[0].image}'
+
+cat > /home/user/diagnosis.txt <<END
+pod_status=ImagePullBackOff
+broken_image=$(kubectl get deployment catalog -o jsonpath='{.spec.template.spec.containers[0].image}')
+END
+
+kubectl set image deployment/catalog catalog=nginx:1.30.6-alpine
+kubectl rollout status deployment/catalog
+kubectl get events --sort-by=.lastTimestamp > /home/user/events.txt
+```
+
+APPROACH
+========
+1. `kubectl get pods` and `kubectl describe pod` for one `catalog` Pod.
+2. `kubectl get events --sort-by=.lastTimestamp` shows "Failed to pull image" errors.
+3. Write `diagnosis.txt`.
+4. Fix the image with `kubectl set image` (the container is named `catalog`) or `kubectl edit`.
+5. `kubectl rollout status deployment/catalog`, then save the events.
+
+HINT
+====
+- `kubectl get pods` shows the status; `kubectl describe pod <name>` ends with the Events section, which contains the pull error.
+- Look closely at the image name in the Deployment: `kubectl get deployment catalog -o jsonpath='{..image}'`.
+- `kubectl set image deployment/catalog <container>=<image>` changes the image in place.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+image=$(kubectl get deployment catalog -o jsonpath='{.spec.template.spec.containers[0].image}')
+printf 'pod_status=ImagePullBackOff\nbroken_image=%s\n' "$image" > /home/user/diagnosis.txt
+kubectl set image deployment/catalog catalog="$IMAGE_NGINX"
+kubectl rollout status deployment/catalog --timeout=300s
+sleep 2
+kubectl get events --sort-by=.lastTimestamp > /home/user/events.txt

@@ -1,0 +1,140 @@
+Topic: Linux
+Topic ID: linux
+Question: 6
+Title: Diagnose and Fix a Failing Service
+Lab ID: linux-service-troubleshooting
+Environment: systemd
+Add-ons: none
+Source: /opt/devops-labs/labs/02-linux/06-service-troubleshooting
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Scenario
+
+This machine runs **systemd**. The `inventory` service is a small HTTP API that should answer on port `8090`, but users report that it is down. Your job is to find out why with the standard diagnostic tools, fix it, and document how you diagnosed it.
+
+Password for sudo: `user@123!`
+
+## Tasks
+
+### Task 1: Diagnose
+
+Check the status of the `inventory` service and read its logs. The logs explain why it fails.
+
+### Task 2: Fix the root cause
+
+Fix the problem so that the service starts and stays running. Rules:
+
+- Keep the service as it is defined in `/etc/systemd/system/inventory.service`. Do not edit or replace the unit file.
+- The service must listen on port `8090` and keep using `/var/lib/inventory` for its data.
+
+### Task 3: Start and enable
+
+Make sure `inventory` is running now **and** starts automatically at boot (enabled).
+
+Verify it with:
+
+```
+curl http://localhost:8090/health
+```
+
+### Task 4: Document the diagnosis
+
+The possible root causes are listed in `/home/user/causes.txt`. Create `/home/user/diagnosis.txt` with exactly these three lines:
+
+```
+status_command=<the command you used to check the service status>
+logs_command=<the command you used to read the service logs>
+root_cause=<the ID of the root cause from causes.txt>
+```
+
+## Notes
+
+- `systemctl` and `journalctl` need `sudo` for changes and for some logs.
+- After fixing the cause, a failed service needs to be started again.
+
+## Expected outcome
+
+`inventory` is active and enabled, `curl http://localhost:8090/health` returns a JSON status of `ok`, and `diagnosis.txt` records your commands and the root cause.
+
+ANSWER
+======
+The root cause is chosen at random for each lab session. Diagnose first:
+
+```bash
+systemctl status inventory
+sudo journalctl -u inventory -n 30          # password: user@123!
+cat /home/user/causes.txt
+```
+
+Then apply the fix that matches the `ERROR` line:
+
+```bash
+# C1: invalid value in the configuration file
+sudo sed -i 's/^PORT=.*/PORT=8090/' /etc/inventory/inventory.conf
+
+# C2: the service user cannot write to its data directory
+sudo chown -R inventory:inventory /var/lib/inventory
+
+# C3: another service already uses port 8090
+sudo ss -ltnp | grep 8090
+sudo systemctl disable --now legacy-cache
+```
+
+Start, enable and verify:
+
+```bash
+sudo systemctl restart inventory
+sudo systemctl enable inventory
+curl http://localhost:8090/health
+```
+
+Document it (use the ID you found):
+
+```bash
+cat > /home/user/diagnosis.txt <<'END'
+status_command=systemctl status inventory
+logs_command=journalctl -u inventory
+root_cause=C2
+END
+```
+
+APPROACH
+========
+1. Run `systemctl status inventory` and `sudo journalctl -u inventory -n 30`.
+2. Find the `ERROR` line. It points to one of these problems:
+   - a bad value in `/etc/inventory/inventory.conf`,
+   - a data directory the service user `inventory` cannot write to,
+   - another service already using port 8090.
+3. Fix that problem: correct the config file, give the `inventory` user ownership of `/var/lib/inventory`, or stop and disable the service that holds the port (`sudo ss -ltnp` shows which process).
+4. Run `sudo systemctl restart inventory` and `sudo systemctl enable inventory`, then `curl http://localhost:8090/health`.
+5. Write `diagnosis.txt` with your two commands and the matching ID from `causes.txt`.
+
+HINT
+====
+- `systemctl status inventory` shows whether the service runs and the last few log lines.
+- `journalctl -u inventory` shows the full log of one unit. Add `-e` to jump to the end or `-n 30` for the last 30 lines.
+- Read the line that starts with `ERROR`: it names a file, a directory or a port.
+- `systemctl list-units --type=service` lists other services that might be in the way.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+s() { echo "$SUDO_PASSWORD" | sudo -S -p '' "$@"; }
+systemctl status inventory --no-pager >/dev/null 2>&1 || true
+log=$(s journalctl -u inventory --no-pager -n 50)
+if grep -q "invalid PORT" <<<"$log"; then
+  cause=C1; s sed -i 's/^PORT=.*/PORT=8090/' /etc/inventory/inventory.conf
+elif grep -q "cannot write" <<<"$log"; then
+  cause=C2; s chown -R inventory:inventory /var/lib/inventory
+else
+  cause=C3; s systemctl disable --now legacy-cache
+fi
+s systemctl restart inventory
+s systemctl enable inventory
+for _ in $(seq 1 20); do curl -sf http://localhost:8090/health && break; sleep 1; done
+printf 'status_command=systemctl status inventory\nlogs_command=journalctl -u inventory\nroot_cause=%s\n' "$cause" > /home/user/diagnosis.txt

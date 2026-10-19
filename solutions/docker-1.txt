@@ -1,0 +1,76 @@
+Topic: Docker
+Topic ID: docker
+Question: 1
+Title: Run and Inspect an Nginx Container
+Lab ID: docker-run-nginx
+Environment: docker
+Add-ons: none
+Source: /opt/devops-labs/labs/06-docker/01-run-nginx
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+This machine has its own Docker engine. Your first job is to run a web server in a container, publish it on a port of the machine, check that it answers, and read the container's logs.
+
+## Tasks
+
+### Task 1: Run the container
+
+Run an Nginx container in the background with these settings:
+
+- container name: `web`
+- image: `nginx` (the official image; any tag)
+- host port `8080` mapped to container port `80`
+
+### Task 2: Verify access
+
+Use `curl` to request `http://localhost:8080` and confirm that you get the Nginx welcome page.
+
+### Task 3: Inspect the logs
+
+Your request appears in the container's access log. Save the container's logs to `/home/user/web-logs.txt`.
+
+## Notes
+
+- Leave the `web` container running when you submit.
+- The first time an image is used it is downloaded, which can take a moment.
+
+## Expected outcome
+
+A running container named `web` that serves the Nginx welcome page on port 8080, and a log file that shows your request.
+
+ANSWER
+======
+```bash
+docker run -d --name web -p 8080:80 nginx
+docker ps
+curl http://localhost:8080
+docker logs web > /home/user/web-logs.txt 2>&1
+cat /home/user/web-logs.txt
+```
+
+APPROACH
+========
+1. Start the container with `docker run`, using `-d`, `--name web` and `-p 8080:80`.
+2. Check it with `docker ps`.
+3. Run `curl http://localhost:8080` and look for "Welcome to nginx!".
+4. Run `docker logs web` to see the access log line for your request, then save it with `docker logs web > /home/user/web-logs.txt`.
+
+HINT
+====
+- `docker run -d --name NAME -p HOST:CONTAINER IMAGE` starts a container in the background with a published port.
+- `docker ps` shows running containers and their ports.
+- `docker logs NAME` prints the container's output. Redirect it with `>` to save it to a file.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+docker run -d --name web -p 8080:80 nginx >/dev/null
+for _ in $(seq 1 30); do curl -sf http://localhost:8080 >/dev/null && break; sleep 1; done
+curl -s http://localhost:8080 | grep -q "Welcome to nginx"
+docker logs web > /home/user/web-logs.txt 2>&1

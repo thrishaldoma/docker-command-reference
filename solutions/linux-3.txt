@@ -1,0 +1,68 @@
+Topic: Linux
+Topic ID: linux
+Question: 3
+Title: Directories and Files in Practice
+Lab ID: linux-practice-directory
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/02-linux/03-practice-directory
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Lab Description
+
+In this lab, your goal is to practice how Linux organizes information using directories and files. You will create a dedicated working folder and place specific files inside it. This exercise reinforces your understanding of how to create directories, move between them, generate empty files, and view them in a detailed listing format. The lab will also help you understand how to ensure your work is done inside the correct location, which is important for passing automated test cases.
+
+## Tasks
+
+1. Create a new folder named `practice` in your home directory, so its full path is `/home/user/practice`.
+2. Enter this folder, because all subsequent work must happen inside it.
+3. Create three files named `a.txt`, `b.txt` and `c.txt`. All of them must be empty files, and all of them must be located directly inside the `practice` folder.
+4. Once the files are created, use a listing option that not only displays file names but also shows detailed information about each one, including permissions, ownership, size and timestamps. This detailed listing is necessary to confirm that the files exist in the correct directory and have been properly created. This step is only intended for practice and will not be verified by the automated test cases.
+
+## Notes
+
+- Password for sudo: `user@123!` (not needed for this lab).
+- Ensure you enter the directory before creating the files.
+- Verify your files using the long listing format from inside the `practice` directory.
+- The files must belong to you (`user`), so do not use `sudo` to create them.
+
+## Expected outcome
+
+`/home/user/practice` contains exactly the empty files `a.txt`, `b.txt` and `c.txt`, owned by `user`.
+
+ANSWER
+======
+```bash
+cd ~
+mkdir practice
+cd practice
+touch a.txt b.txt c.txt
+ls -l
+```
+
+APPROACH
+========
+1. From your home directory, create the folder with `mkdir practice`.
+2. Enter it with `cd practice` and confirm with `pwd`.
+3. Create the three files in one command with `touch`.
+4. Run `ls -l` to see permissions, owner, size and timestamps.
+
+HINT
+====
+- `mkdir` creates a directory and `cd` enters it.
+- `touch` creates an empty file, and it accepts several names at once.
+- `ls -l` is the long listing format.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd ~
+mkdir practice
+cd practice
+touch a.txt b.txt c.txt
+ls -l

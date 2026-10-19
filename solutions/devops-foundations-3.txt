@@ -1,0 +1,115 @@
+Topic: DevOps Foundations
+Topic ID: devops-foundations
+Question: 3
+Title: DevOps Roadmap for a Small Team
+Lab ID: devops-roadmap
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/01-devops-foundations/03-devops-roadmap
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Scenario
+
+PixelPost is a team of four developers who build a photo-sharing web app. They still deploy manually: code lives in a shared folder, nobody runs tests before a release, the app only works on the senior developer's laptop setup, releases are copied to the server by hand on Friday evenings, and nobody notices outages until users complain.
+
+You are asked to write a one-page DevOps roadmap that tells the team what to adopt first and why. The team description and a list of possible reasons are in `/home/user/roadmap/`:
+
+- `team.md` describes the team.
+- `practices.txt` lists five practices with IDs `P1` to `P5`.
+- `reasons.txt` lists short reasons with IDs `R1`, `R2`, ... Some reasons do not fit any practice.
+
+## Tasks
+
+### Task 1: Write the roadmap
+
+Create `/home/user/roadmap/roadmap.md` with:
+
+1. A first line that is exactly the heading `# DevOps Roadmap`.
+2. A numbered list with exactly five steps, one per practice, in this priority order: version control, automated tests, containerization, CI/CD, monitoring.
+3. Each step written as `<number>. <practice>: <reason>`, where the reason is your own short explanation of at least six words, for example:
+
+```
+1. Version control: every change is tracked and can be reviewed or reverted
+```
+
+### Task 2: Match practices to reasons
+
+Create `/home/user/roadmap/reasons-answer.txt` that gives the best reason for each practice, one line per practice, in the form `P1=R4`. All five practices must be listed.
+
+## Notes
+
+- The practice names in your numbered list must clearly name each practice, for example "Version control", "Automated tests", "Containerization", "CI/CD" and "Monitoring".
+- Other text, such as a short introduction, may appear between the heading and the list.
+
+## Expected outcome
+
+A one-page roadmap with five prioritized steps and reasons, and every practice matched to its best reason.
+
+ANSWER
+======
+```bash
+cd /home/user/roadmap
+cat > roadmap.md <<'END'
+# DevOps Roadmap
+
+Plan for PixelPost, in the order the team should adopt each practice.
+
+1. Version control: move the code to Git so every change is tracked, reviewed and reversible
+2. Automated tests: run tests on every change so bugs are caught before users see them
+3. Containerization: package the app in a container so it runs the same on every machine
+4. CI/CD: build, test and deploy automatically from Git instead of copying files by hand
+5. Monitoring: watch errors and uptime so the team learns about outages before users do
+END
+```
+
+The reasons are shuffled for every lab session, so match them by meaning:
+
+| Practice | Best reason |
+| --- | --- |
+| Version control | Every change is tracked, can be reviewed and can be undone |
+| Automated tests | Bugs are caught on every change, before a release |
+| Containerization | The app runs the same way on every laptop and server |
+| CI/CD | Releases happen automatically and repeatably, not by hand on Friday evenings |
+| Monitoring | The team learns about outages before users report them |
+
+Then write `reasons-answer.txt`, for example `P1=R6` (use your own IDs).
+
+APPROACH
+========
+1. Read `team.md`, `practices.txt` and `reasons.txt`.
+2. Open `roadmap.md` in `nano` and write the heading, then the five numbered steps in the given order, each with a reason of six or more words.
+3. For each practice, find the reason that describes the problem it solves, and write `P<n>=R<m>` lines into `reasons-answer.txt`.
+4. Check both files with `cat`.
+
+HINT
+====
+- Each practice depends on the ones before it: you cannot run automated tests in a pipeline without the code in version control, and you cannot deploy a container you have not built.
+- Monitoring comes last in the list, but it is what tells you the earlier steps work in production.
+- A good reason explains the problem the practice solves for this team, in their words.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/roadmap
+cat > roadmap.md <<'END'
+# DevOps Roadmap
+
+1. Version control: move the code to Git so every change is tracked and reversible
+2. Automated tests: run tests on every change so bugs are caught before users see them
+3. Containerization: package the app so it runs the same on every machine
+4. CI/CD: build, test and deploy automatically instead of copying files by hand
+5. Monitoring: watch errors and uptime so outages are noticed before users complain
+END
+r() { grep -E "$1" reasons.txt | cut -d: -f1; }
+{
+  echo "P1=$(r 'tracked')"
+  echo "P2=$(r 'Bugs are caught')"
+  echo "P3=$(r 'same way')"
+  echo "P4=$(r 'automatically')"
+  echo "P5=$(r 'outages')"
+} > reasons-answer.txt

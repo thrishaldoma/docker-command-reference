@@ -1,0 +1,119 @@
+Topic: GitHub Actions
+Topic ID: github-actions
+Question: 2
+Title: Let Failing Tests Stop the Pipeline
+Lab ID: gha-test-step
+Environment: base
+Add-ons: gitea
+Source: /opt/devops-labs/labs/15-github-actions/02-test-step
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+A pipeline is only useful if it stops bad changes. In this lab you add an automated test step to an existing workflow, then prove both sides: a failing test makes the workflow fail, and the corrected test makes it pass again.
+
+- Gitea: http://localhost:8801, username `student`, password `student@123!`
+- The repository `student/calculator` is cloned to `/home/user/calculator` (credentials saved).
+- It already has `.gitea/workflows/ci.yml` with checkout, install and build steps. `make test` runs the tests in `tests/` with pytest.
+
+## Tasks
+
+### Task 1: Add the test step
+
+Add a step named `Run tests` that runs `make test`. It must run **after** the dependencies are installed and **before** the build. Commit and push.
+
+### Task 2: Show that a failing test fails the workflow
+
+Add this test to `tests/test_calc.py`, which is deliberately wrong:
+
+```python
+def test_multiply():
+    assert calc.multiply(3, 4) == 13
+```
+
+Commit and push it. The run must fail at the `Run tests` step, and the `Build` step must not run.
+
+### Task 3: Show that the corrected test passes
+
+Fix the expected value to `12`, commit and push. The new run must succeed.
+
+## Notes
+
+- Push each change separately, so each one gets its own run.
+- Watch the runs in the repository's **Actions** tab.
+
+## Expected outcome
+
+The workflow has a test step, one run failed because of the wrong test (without building), and the latest run on `main` passed with the corrected test.
+
+ANSWER
+======
+```bash
+cd /home/user/calculator
+python3 - <<'PY'
+p = ".gitea/workflows/ci.yml"
+s = open(p).read()
+s = s.replace("      - name: Build\n", "      - name: Run tests\n        run: make test\n      - name: Build\n")
+open(p, "w").write(s)
+PY
+git commit -am "Run the tests in CI" && git push
+
+cat >> tests/test_calc.py <<'END'
+
+
+def test_multiply():
+    assert calc.multiply(3, 4) == 13
+END
+git commit -am "Add a multiply test" && git push      # this run fails at Run tests
+
+sed -i 's/== 13/== 12/' tests/test_calc.py
+git commit -am "Fix the expected multiply result" && git push      # this run passes
+```
+
+APPROACH
+========
+1. Edit `.gitea/workflows/ci.yml`, add the `Run tests` step, commit and push. Check that the run passes.
+2. Append the wrong test, commit and push. Open the run: `Run tests` is red and `Build` is skipped.
+3. Change 13 to 12, commit and push. The next run is green.
+
+HINT
+====
+- Insert the new step between "Install dependencies" and "Build", with the same indentation.
+- When a step fails, the following steps of the job are skipped.
+- `git commit -am "message"` commits changes to files Git already knows.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/calculator
+wait_run() {
+  # Waits until the run for the current commit has finished.
+  local sha auth
+  sha=$(git rev-parse HEAD)
+  auth="Authorization: Basic $(printf '%s:%s' "$GITEA_USER" "$GITEA_PASSWORD" | base64 -w0)"
+  for _ in $(seq 1 90); do
+    curl -sf -H "$auth" "$GITEA_URL/api/v1/repos/$GITEA_USER/calculator/actions/runs?limit=20" \
+      | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if any(r['head_sha']=='$sha' and r['status']=='completed' for r in d.get('workflow_runs') or []) else 1)" && return 0
+    sleep 3
+  done
+  return 1
+}
+python3 - <<'PY'
+p = ".gitea/workflows/ci.yml"
+s = open(p).read()
+s = s.replace("      - name: Build\n", "      - name: Run tests\n        run: make test\n      - name: Build\n")
+open(p, "w").write(s)
+PY
+git commit -qam "Run the tests in CI" && git push -q
+wait_run
+printf '\n\ndef test_multiply():\n    assert calc.multiply(3, 4) == 13\n' >> tests/test_calc.py
+git commit -qam "Add a multiply test" && git push -q
+wait_run
+sed -i 's/== 13/== 12/' tests/test_calc.py
+git commit -qam "Fix the expected multiply result" && git push -q
+wait_run

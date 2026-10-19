@@ -1,0 +1,101 @@
+Topic: Helm
+Topic ID: helm
+Question: 2
+Title: Deploy a Chart with Your Own Values
+Lab ID: helm-configurable-values
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/14-helm/02-configurable-values
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+The same chart deploys to every environment; only the **values** change. A chart for the storefront is in `/home/user/charts/shop`. Its templates read `image.repository`, `image.tag`, `replicaCount` and `service.port`. You will write a values file for production, check what it renders, install the release and verify the resources it created.
+
+## Tasks
+
+### Task 1: Write the values file
+
+Create `/home/user/charts/prod-values.yaml` that sets:
+
+- `image.repository` and `image.tag` so the image is `nginx:1.30.6-alpine`
+- `replicaCount`: `3`
+- `service.port`: `8080`
+
+Do not edit the chart itself.
+
+### Task 2: Check the rendered manifests
+
+Render the chart with your values file and save the output to `/home/user/charts/rendered.yaml`. Check that it shows the image, `replicas: 3` and `port: 8080`.
+
+### Task 3: Install the release
+
+Install the chart as a release named `shop` in the namespace `shop` (create the namespace with the install command), using your values file.
+
+### Task 4: Verify the installed resources
+
+Confirm that the Deployment `shop` has 3 ready replicas with the right image and that the Service `shop` listens on port `8080`. Save the output of `helm get values shop -n shop` to `/home/user/charts/installed-values.txt`.
+
+## Notes
+
+- `helm template` renders without installing; `helm install --dry-run` does the same against the cluster.
+
+## Expected outcome
+
+Release `shop` is deployed in namespace `shop` from your values file, with 3 replicas of the pinned image behind a Service on port 8080.
+
+ANSWER
+======
+```bash
+cd /home/user/charts
+cat > prod-values.yaml <<'END'
+replicaCount: 3
+image:
+  repository: nginx
+  tag: "<tag of nginx:1.30.6-alpine>"
+service:
+  port: 8080
+END
+helm template shop ./shop -f prod-values.yaml > rendered.yaml
+grep -E 'image:|replicas:|port:' rendered.yaml
+helm install shop ./shop -f prod-values.yaml -n shop --create-namespace
+kubectl rollout status deployment/shop -n shop
+kubectl get deploy,svc -n shop
+helm get values shop -n shop > installed-values.txt
+```
+
+APPROACH
+========
+1. Read `shop/values.yaml` to see the structure.
+2. Write `prod-values.yaml` with the four settings.
+3. Render with `helm template ... > rendered.yaml` and read it.
+4. Install with `helm install`, then `kubectl rollout status deployment/shop -n shop`.
+5. `helm get values shop -n shop > installed-values.txt`
+
+HINT
+====
+- A values file uses the same structure as the chart's `values.yaml`, but only needs the keys you change.
+- `helm template shop ./shop -f prod-values.yaml`
+- `helm install shop ./shop -f prod-values.yaml -n shop --create-namespace`
+- `kubectl get deploy,svc -n shop`
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/charts
+cat > prod-values.yaml <<END
+replicaCount: 3
+image:
+  repository: ${IMAGE_NGINX%:*}
+  tag: "${IMAGE_NGINX##*:}"
+service:
+  port: 8080
+END
+helm template shop ./shop -f prod-values.yaml > rendered.yaml
+helm install shop ./shop -f prod-values.yaml -n shop --create-namespace --wait --timeout 5m >/dev/null
+helm get values shop -n shop > installed-values.txt

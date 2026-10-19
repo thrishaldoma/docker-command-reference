@@ -1,0 +1,117 @@
+Topic: Git and GitHub
+Topic ID: git
+Question: 4
+Title: Feature Branch and Pull Request
+Lab ID: git-pull-request
+Environment: base
+Add-ons: gitea
+Source: /opt/devops-labs/labs/05-git/04-pull-request
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Your team never commits straight to `main`. Every change goes through a feature branch and a **pull request** (PR) that someone reviews before it is merged. In this lab you go through that whole flow on the local **Gitea** server, which stands in for GitHub.
+
+- Gitea: http://localhost:8801 (or the **Open Gitea** button above)
+- Username: `student`, password: `student@123!`
+
+The repository `student/greeter` exists on Gitea and is already cloned to `/home/user/greeter`. Your Gitea credentials are saved for Git, so `git push` does not ask for them.
+
+## Tasks
+
+### Task 1: Create a feature branch
+
+In `/home/user/greeter`, create a branch named `feature/farewell` from `main` and switch to it.
+
+### Task 2: Implement the change
+
+Add a function `farewell(name)` to `greeter.py` that returns the text `Goodbye, <name>!`. For example, `farewell("Ada")` returns `Goodbye, Ada!`. Keep the existing `greet` function unchanged.
+
+Commit the change on `feature/farewell` with a message of at least three words.
+
+### Task 3: Push the branch
+
+Push `feature/farewell` to `origin`.
+
+### Task 4: Open and review a pull request
+
+In Gitea, open a pull request that merges `feature/farewell` into `main`. Give it a title that contains the word `farewell`. Before merging, open the **Files Changed** tab of the PR and review the diff.
+
+### Task 5: Merge and update your local main
+
+Merge the pull request in Gitea. Then switch your local repository back to `main` and pull, so that your local `main` matches `main` on Gitea.
+
+## Notes
+
+- Do not push directly to `main`: the change must reach `main` through the merged pull request.
+- Run `python3 -c 'import greeter; print(greeter.farewell("Ada"))'` inside the folder to test your function.
+
+## Expected outcome
+
+A merged pull request from `feature/farewell` into `main`, `main` on Gitea containing a working `farewell` function, and your local `main` up to date.
+
+ANSWER
+======
+```bash
+cd /home/user/greeter
+git switch -c feature/farewell
+cat >> greeter.py <<'END'
+
+
+def farewell(name):
+    return f"Goodbye, {name}!"
+END
+python3 -c 'import greeter; print(greeter.farewell("Ada"))'
+git add greeter.py
+git commit -m "Add farewell function"
+git push -u origin feature/farewell
+```
+
+In Gitea: **Pull Requests**, **New Pull Request**, base `main`, compare `feature/farewell`, title "Add farewell function", **Create Pull Request**. Review **Files Changed**, then **Create merge commit**.
+
+```bash
+git switch main
+git pull
+git log --oneline --graph -5
+```
+
+APPROACH
+========
+1. `cd /home/user/greeter && git switch -c feature/farewell`
+2. Add the `farewell` function to `greeter.py` with `nano`, test it, then `git add` and `git commit`.
+3. `git push -u origin feature/farewell`
+4. In Gitea open the repository, go to **Pull Requests**, click **New Pull Request**, choose `main` as the base and `feature/farewell` as the branch to merge, and give it a title such as "Add farewell function".
+5. Open **Files Changed** and read the diff, then go back to the conversation tab and click **Create merge commit**.
+6. Locally run `git switch main` and `git pull`.
+
+HINT
+====
+- `git switch -c feature/farewell` creates the branch and switches to it.
+- In Python, an f-string builds the text: `return f"Goodbye, {name}!"`.
+- `git push -u origin feature/farewell` pushes the branch. Gitea then shows a button to create a pull request, or use **New Pull Request** on the repository's Pull Requests tab.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/greeter
+git switch -q -c feature/farewell
+printf '\n\ndef farewell(name):\n    return f"Goodbye, {name}!"\n' >> greeter.py
+git add greeter.py
+git commit -q -m "Add farewell function"
+git push -q -u origin feature/farewell
+auth="Authorization: Basic $(printf '%s:%s' "$GITEA_USER" "$GITEA_PASSWORD" | base64 -w0)"
+api() { curl -sf -H "$auth" -H 'Content-Type: application/json' "$@"; }
+num=$(api -X POST "$GITEA_URL/api/v1/repos/$GITEA_USER/greeter/pulls" \
+  -d '{"title":"Add farewell function","head":"feature/farewell","base":"main"}' | python3 -c 'import json,sys; print(json.load(sys.stdin)["number"])')
+api "$GITEA_URL/api/v1/repos/$GITEA_USER/greeter/pulls/$num/files" >/dev/null
+for _ in $(seq 1 20); do
+  api -X POST "$GITEA_URL/api/v1/repos/$GITEA_USER/greeter/pulls/$num/merge" -d '{"Do":"merge"}' >/dev/null && break
+  sleep 1
+done
+git switch -q main
+git pull -q

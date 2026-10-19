@@ -1,0 +1,140 @@
+Topic: Monitoring, Observability and GitOps
+Topic ID: monitoring-gitops
+Question: 3
+Title: GitOps with Argo CD
+Lab ID: gitops-argocd
+Environment: kubernetes
+Add-ons: gitea, argocd
+Source: /opt/devops-labs/labs/19-monitoring-gitops/03-argocd-gitops
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+In **GitOps**, a Git repository holds the desired state of the cluster, and a controller keeps the cluster in line with it. Nobody runs `kubectl apply` for releases: you change Git, and the controller does the rest. **Argo CD** is that controller here. You will connect it to a repository, let it deploy an application, then scale the application by changing a number in Git.
+
+- Argo CD: http://localhost:8804 (or **Open Argo CD**), user `admin`, password `argocd@123!`
+- Gitea: http://localhost:8801, user `student`, password `student@123!`
+- The repository `student/gitops-demo` holds the manifests of the `web` application in `apps/web/`. It is cloned to `/home/user/gitops-demo` (credentials saved). Inside the cluster, Argo CD reaches it at `http://gitea:3000/student/gitops-demo.git`.
+
+## Tasks
+
+### Task 1: Create the Argo CD Application
+
+Create an Argo CD Application named `web` (in the `argocd` namespace), either in the Argo CD web interface (**New App**) or with a manifest and `kubectl apply`:
+
+- source: repository `http://gitea:3000/student/gitops-demo.git`, revision `main`, path `apps/web`
+- destination: the local cluster (`https://kubernetes.default.svc`), namespace `web`
+- sync policy: **automatic**, with **prune** and **self heal** enabled, and the sync option to create the namespace
+
+### Task 2: Verify the first sync
+
+Wait until the Application is **Synced** and **Healthy**, and check that the Deployment `web` in the namespace `web` runs 2 replicas.
+
+### Task 3: Change the desired state in Git
+
+In `/home/user/gitops-demo/apps/web/deployment.yaml`, change `replicas: 2` to `replicas: 4`. Commit and push to `main`. Do **not** change the cluster directly.
+
+### Task 4: Watch the reconciliation
+
+Argo CD checks the repository every 20 seconds. Wait until the Deployment runs 4 ready replicas and the Application is Synced to your new commit. Save the commit ID that Argo CD synced (shown in the Application details, or `kubectl -n argocd get application web -o jsonpath='{.status.sync.revision}'`) to `/home/user/gitops-demo-revision.txt`.
+
+## Notes
+
+- Self heal means Argo CD also undoes manual changes: if you scale the Deployment with kubectl, it goes back to what Git says.
+
+## Expected outcome
+
+The `web` Application syncs automatically from Git, and changing the replica count in Git scaled the Deployment to 4 without anyone touching the cluster.
+
+ANSWER
+======
+```bash
+cat <<'END' | kubectl apply -f -
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: http://gitea:3000/student/gitops-demo.git
+    targetRevision: main
+    path: apps/web
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: web
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+END
+kubectl -n argocd get application web -w        # wait for Synced / Healthy, then Ctrl+C
+kubectl -n web get deploy web                   # 2/2
+
+cd /home/user/gitops-demo
+sed -i 's/replicas: 2/replicas: 4/' apps/web/deployment.yaml
+git commit -am "Scale web to 4 replicas"
+git push
+kubectl -n web get deploy web -w                # becomes 4/4 within a minute
+kubectl -n argocd get application web -o jsonpath='{.status.sync.revision}' > /home/user/gitops-demo-revision.txt
+```
+
+APPROACH
+========
+1. Write the Application manifest (or fill in the New App form) and create it.
+2. Watch `kubectl -n argocd get application web -w` until it is Synced and Healthy, then check `kubectl -n web get deploy web`.
+3. Edit the replica count in Git, commit and push.
+4. Wait for the Deployment to show 4/4 and for the Application's revision to match your commit (`git rev-parse HEAD`).
+5. Save the revision.
+
+HINT
+====
+- An Application manifest has `apiVersion: argoproj.io/v1alpha1`, `kind: Application`, `spec.source`, `spec.destination` and `spec.syncPolicy`.
+- Automatic sync with prune and self heal: `syncPolicy: {automated: {prune: true, selfHeal: true}, syncOptions: [CreateNamespace=true]}`.
+- `kubectl -n argocd get applications` shows the sync and health status.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cat <<END | kubectl apply -f -
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: http://gitea:3000/$GITEA_USER/gitops-demo.git
+    targetRevision: main
+    path: apps/web
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: web
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+END
+status() { kubectl -n argocd get application web -o jsonpath='{.status.sync.status}/{.status.health.status}/{.status.sync.revision}' 2>/dev/null; }
+for _ in $(seq 1 90); do [[ "$(status)" == Synced/Healthy/* ]] && break; sleep 3; done
+cd /home/user/gitops-demo
+sed -i 's/replicas: 2/replicas: 4/' apps/web/deployment.yaml
+git commit -qam "Scale web to 4 replicas"
+git push -q
+head=$(git rev-parse HEAD)
+for _ in $(seq 1 90); do
+  [ "$(status)" = "Synced/Healthy/$head" ] && [ "$(kubectl -n web get deploy web -o jsonpath='{.status.readyReplicas}')" = 4 ] && break
+  sleep 3
+done
+kubectl -n argocd get application web -o jsonpath='{.status.sync.revision}' > /home/user/gitops-demo-revision.txt

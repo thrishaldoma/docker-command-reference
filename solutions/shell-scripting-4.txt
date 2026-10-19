@@ -1,0 +1,129 @@
+Topic: Shell Scripting
+Topic ID: shell-scripting
+Question: 4
+Title: Check a File's Permissions
+Lab ID: shell-file-check
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/03-shell-scripting/04-file-permissions-check
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Deployment scripts often fail because a file is missing or has the wrong permissions. Write a script that checks a file and reports, in a clear and predictable format, whether the current user can read, write and execute it.
+
+## Tasks
+
+Create the script `/home/user/scripts/filecheck.sh`. It takes exactly one argument, a path:
+
+```
+bash /home/user/scripts/filecheck.sh /path/to/file
+```
+
+### Task 1: Report each check
+
+When the file exists, print exactly these four lines and exit with status `0`, with `yes` or `no` for each check, as seen by the user who runs the script:
+
+```
+exists: yes
+readable: yes
+writable: no
+executable: no
+```
+
+### Task 2: A missing file
+
+When the path does not exist, print exactly this one line and exit with status `1`:
+
+```
+exists: no
+```
+
+### Task 3: A missing argument
+
+When the script is run with no argument or more than one argument, print this line to standard error and exit with status `2`:
+
+```
+Usage: filecheck.sh <file>
+```
+
+## Notes
+
+- The checker runs your script as `user` against files with different owners and permission modes, including a path with spaces.
+- Remember that permissions depend on who runs the script: `root` can read almost anything, but `user` cannot.
+
+## Expected outcome
+
+`filecheck.sh` reports exists, readable, writable and executable correctly for any file, and handles missing files and arguments with the exact messages and exit codes.
+
+ANSWER
+======
+```bash
+cat > /home/user/scripts/filecheck.sh <<'END'
+#!/bin/bash
+# Reports whether a file exists and whether the current user can read,
+# write and execute it.
+
+if [ "$#" -ne 1 ]; then
+  echo "Usage: filecheck.sh <file>" >&2
+  exit 2
+fi
+
+file=$1
+if [ ! -e "$file" ]; then
+  echo "exists: no"
+  exit 1
+fi
+
+yesno() {
+  if test "$1" "$file"; then echo yes; else echo no; fi
+}
+
+echo "exists: yes"
+echo "readable: $(yesno -r)"
+echo "writable: $(yesno -w)"
+echo "executable: $(yesno -x)"
+END
+chmod +x /home/user/scripts/filecheck.sh
+/home/user/scripts/filecheck.sh /etc/passwd
+```
+
+APPROACH
+========
+1. Check the number of arguments with `$#` and print the usage line to standard error with `exit 2` when it is not 1.
+2. If `[ ! -e "$1" ]`, print `exists: no` and `exit 1`.
+3. Otherwise print the four lines, using `[ -r ]`, `[ -w ]` and `[ -x ]` for the last three.
+4. Test it on `/etc/passwd`, on `/etc/shadow`, on your own script and on a missing file.
+
+HINT
+====
+- Bash has test operators for each check: `-e` exists, `-r` readable, `-w` writable, `-x` executable.
+- A small function such as `yesno() { if "$@"; then echo yes; else echo no; fi; }` avoids repeating `if` blocks.
+- Always quote `"$1"` so paths with spaces work.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cat > /home/user/scripts/filecheck.sh <<'END'
+#!/bin/bash
+if [ "$#" -ne 1 ]; then
+  echo "Usage: filecheck.sh <file>" >&2
+  exit 2
+fi
+file=$1
+if [ ! -e "$file" ]; then
+  echo "exists: no"
+  exit 1
+fi
+yesno() { if test "$1" "$file"; then echo yes; else echo no; fi; }
+echo "exists: yes"
+echo "readable: $(yesno -r)"
+echo "writable: $(yesno -w)"
+echo "executable: $(yesno -x)"
+END
+chmod +x /home/user/scripts/filecheck.sh

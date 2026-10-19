@@ -1,0 +1,142 @@
+Topic: Networking
+Topic ID: networking
+Question: 2
+Title: Troubleshoot Web Services with ping, ss and curl
+Lab ID: networking-troubleshoot-web
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/04-networking/02-troubleshoot-web
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Scenario
+
+The online shop is made of four web services. Each one should answer HTTP requests on port `8080`:
+
+| Service | Address |
+| --- | --- |
+| storefront | `http://storefront:8080/` |
+| payments | `http://payments:8080/` |
+| inventory | `http://inventory:8080/` |
+| shipping | `http://shipping:8080/` |
+
+The monitoring system says that three of them are broken, each for a different reason:
+
+- **unreachable**: the server does not answer at all on the network (it does not reply to `ping`).
+- **closed-port**: the server answers `ping`, but nothing accepts connections on port 8080.
+- **http-error**: the service accepts connections, but returns an HTTP error status.
+
+One service is healthy (**ok**).
+
+There is also a local admin web app on **this** machine that should listen on port `8000`, but it was started on a different port by mistake.
+
+## Tasks
+
+### Task 1: Classify each service
+
+Use `ping` to test reachability and `curl` to test the port and the HTTP response. Write `/home/user/diagnosis.txt` with one line per service:
+
+```
+storefront=<ok, unreachable, closed-port or http-error>
+payments=<...>
+inventory=<...>
+shipping=<...>
+```
+
+### Task 2: Record the HTTP error
+
+Add a line with the HTTP status code returned by the service that has an http-error:
+
+```
+http_error_code=<three digit status code>
+```
+
+### Task 3: Find the local port
+
+Use `ss` to find the TCP port the local admin web app (a `python3` process) really listens on, and add:
+
+```
+local_port=<port>
+```
+
+## Notes
+
+- `ping -c 2 <host>` sends two packets and stops.
+- `curl -s -o /dev/null -w '%{http_code}\n' <url>` prints just the status code. A status of `000` means no HTTP response was received; read curl's error message (drop `-s`) to see why.
+- Use `--max-time 5` with curl so unreachable hosts do not keep you waiting.
+- The assignment of problems to services is different in every lab session.
+
+## Expected outcome
+
+`/home/user/diagnosis.txt` names the state of all four services, the HTTP error code and the real local port.
+
+ANSWER
+======
+Which service has which problem changes in every session, so test them all:
+
+```bash
+for s in storefront payments inventory shipping; do
+  echo "== $s"
+  ping -c 2 -W 2 "$s" >/dev/null && echo "ping ok" || echo "no ping reply"
+  curl -s -o /dev/null --max-time 5 -w 'http %{http_code}\n' "http://$s:8080/" || echo "curl failed (exit $?)"
+done
+sudo ss -tlnp | grep python3
+```
+
+Interpretation:
+
+- no ping reply: `unreachable`
+- ping replies but curl exits with code 7 (connection refused): `closed-port`
+- curl returns 503: `http-error`, and `http_error_code=503`
+- curl returns 200: `ok`
+
+Example (your services will differ):
+
+```bash
+cat > /home/user/diagnosis.txt <<'END'
+storefront=ok
+payments=unreachable
+inventory=closed-port
+shipping=http-error
+http_error_code=503
+local_port=8081
+END
+```
+
+APPROACH
+========
+1. For each service, run `ping -c 2 <name>`. Note which one does not reply.
+2. For the others, run `curl -v --max-time 5 http://<name>:8080/`. "Connection refused" means a closed port; otherwise note the status code.
+3. Write the four `name=state` lines and the `http_error_code` line.
+4. Run `sudo ss -tlnp` and find the `python3` process. Its local port goes into `local_port=`.
+
+HINT
+====
+- No reply to `ping` points to a reachability problem.
+- If ping works but curl says "Connection refused", the port is closed.
+- If curl gets a response, look at the status code: 2xx is fine, 5xx is a server error.
+- `ss -tlnp` (with `sudo` for the process names) shows which process listens on which port.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -uo pipefail
+out=/home/user/diagnosis.txt
+: > "$out"
+for s in storefront payments inventory shipping; do
+  if ! ping -c 2 -W 2 "$s" >/dev/null 2>&1; then
+    state=unreachable
+  else
+    code=$(curl -s -o /dev/null --max-time 5 -w '%{http_code}' "http://$s:8080/")
+    if [ "$code" = 000 ]; then state=closed-port
+    elif [ "$code" -ge 400 ]; then state=http-error; echo "http_error_code=$code" >> "$out"
+    else state=ok
+    fi
+  fi
+  echo "$s=$state" >> "$out"
+done
+port=$(echo "$SUDO_PASSWORD" | sudo -S -p '' ss -tlnpH | awk '/python3/ {n=split($4,a,":"); print a[n]; exit}')
+echo "local_port=$port" >> "$out"

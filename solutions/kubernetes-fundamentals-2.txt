@@ -1,0 +1,116 @@
+Topic: Kubernetes Fundamentals
+Topic ID: kubernetes-fundamentals
+Question: 2
+Title: Deploy and Inspect a Web Application
+Lab ID: k8s-deploy-inspect
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/08-kubernetes-fundamentals/02-deploy-inspect
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Deploy a small web application to the cluster and use the three most important inspection commands, `kubectl get`, `kubectl describe` and `kubectl logs`, to confirm that it reaches a healthy state.
+
+## Tasks
+
+### Task 1: Create a namespace
+
+Create a namespace named `demo`.
+
+### Task 2: Deploy the application
+
+In the `demo` namespace, create a Deployment:
+
+- name: `hello-web`
+- image: `stefanprodan/podinfo:6.15.0`
+- replicas: `2`
+- container port: `9898`
+
+You can use `kubectl create deployment` or write a YAML manifest and `kubectl apply` it.
+
+### Task 3: Wait until it is healthy
+
+Wait until both replicas are available. `kubectl rollout status` waits for you.
+
+### Task 4: Inspect it and save the output
+
+Save the output of these commands:
+
+- `kubectl get` for the pods of the deployment, in wide format: `/home/user/inspect/pods.txt`
+- `kubectl describe` of the deployment: `/home/user/inspect/describe.txt`
+- `kubectl logs` of one of the deployment's pods: `/home/user/inspect/logs.txt`
+
+### Task 5: Record what you saw
+
+Create `/home/user/inspect/summary.txt` with:
+
+```
+pod_count=<number of pods of hello-web>
+image=<image used by the pods>
+node=<name of the node the pods run on>
+log_contains_port=<the port number the application says it listens on in its logs>
+```
+
+## Notes
+
+- The `inspect` folder does not exist yet.
+- Leave the deployment running when you submit.
+
+## Expected outcome
+
+`hello-web` runs two healthy replicas in `demo`, and the saved files show what get, describe and logs report.
+
+ANSWER
+======
+```bash
+kubectl create namespace demo
+kubectl create deployment hello-web --image=stefanprodan/podinfo:6.15.0 --replicas=2 --port=9898 -n demo
+kubectl rollout status deployment/hello-web -n demo
+
+mkdir -p /home/user/inspect
+kubectl get pods -n demo -l app=hello-web -o wide > /home/user/inspect/pods.txt
+kubectl describe deployment hello-web -n demo > /home/user/inspect/describe.txt
+kubectl logs deploy/hello-web -n demo > /home/user/inspect/logs.txt
+grep -i port /home/user/inspect/logs.txt
+
+cat > /home/user/inspect/summary.txt <<'END'
+pod_count=2
+image=stefanprodan/podinfo:6.15.0
+node=k3s
+log_contains_port=9898
+END
+```
+
+APPROACH
+========
+1. Create the namespace and the deployment.
+2. Wait with `kubectl rollout status`.
+3. `mkdir -p /home/user/inspect`, then run the three commands with `>` redirection.
+4. Read the files: `describe.txt` lists the image and replicas, `pods.txt` shows the node, and `logs.txt` shows the startup messages, including the port.
+5. Write `summary.txt`.
+
+HINT
+====
+- `kubectl create namespace demo`
+- `kubectl create deployment hello-web --image=... --replicas=2 --port=9898 -n demo`
+- `kubectl rollout status deployment/hello-web -n demo`
+- `kubectl get pods -n demo -o wide`, `kubectl describe deployment hello-web -n demo`, `kubectl logs deploy/hello-web -n demo`
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+kubectl create namespace demo
+kubectl create deployment hello-web --image="$IMAGE_PODINFO" --replicas=2 --port=9898 -n demo
+kubectl rollout status deployment/hello-web -n demo --timeout=300s
+mkdir -p /home/user/inspect
+kubectl get pods -n demo -l app=hello-web -o wide > /home/user/inspect/pods.txt
+kubectl describe deployment hello-web -n demo > /home/user/inspect/describe.txt
+kubectl logs deploy/hello-web -n demo > /home/user/inspect/logs.txt
+node=$(kubectl get pods -n demo -l app=hello-web -o jsonpath='{.items[0].spec.nodeName}')
+printf 'pod_count=2\nimage=%s\nnode=%s\nlog_contains_port=9898\n' "$IMAGE_PODINFO" "$node" > /home/user/inspect/summary.txt

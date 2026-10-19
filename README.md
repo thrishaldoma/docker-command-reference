@@ -1,5 +1,19 @@
 # Docker Command Reference
 
+## DevOps lab solutions
+
+The [solutions index](solutions/INDEX.txt) lists all 64 questions across 19 topics
+exported from the DevOps Labs container running on port 8800 on October 19, 2026.
+Each text file is named `<topic>-<question-number>.txt`, such as
+[linux-2.txt](solutions/linux-2.txt), and includes the question, bundled answer,
+approach, hint, and original solution script. Run the answer in the corresponding
+initialized lab session; the script appendix expects the lab runner environment.
+The export was checked against the complete live catalog; the solutions were not
+executed as part of extraction. The source content is covered by the included
+[MIT license](solutions/LICENSE.txt).
+
+## Docker reference
+
 A Docker command reference for the terminal. Each line is exactly:
 
 ```text

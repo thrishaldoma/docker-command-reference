@@ -1,0 +1,162 @@
+Topic: DevSecOps
+Topic ID: devsecops
+Question: 3
+Title: Block Deployments with Image Scanning
+Lab ID: devsecops-image-scan-gate
+Environment: docker
+Add-ons: gitea, registry
+Source: /opt/devops-labs/labs/16-devsecops/03-image-scan-gate
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Even clean code ships in an image full of other software. Scanning the **built image** catches vulnerable packages before they reach production. In this lab you add an image scan to a release pipeline and use it as a **gate**: the deployment step only runs when the image meets the agreed security threshold.
+
+**Agreed threshold:** no CRITICAL vulnerabilities with an available fix in the application's libraries. With Trivy that is:
+
+```
+trivy image --severity CRITICAL --pkg-types library --ignore-unfixed --exit-code 1 <image>
+```
+
+- Gitea: http://localhost:8801, username `student`, password `student@123!`
+- The repository `student/inventory-api` is cloned to `/home/user/inventory-api` (credentials saved). It contains `app.py` and a `Dockerfile` that installs `requirements.txt` from a folder `wheels/` (the runner provides the packages in `/opt/wheels`).
+- The repository already has the secrets `REGISTRY_USERNAME` and `REGISTRY_PASSWORD` for the registry `registry:5000`.
+
+## Tasks
+
+### Task 1: Write the release pipeline
+
+Create `.gitea/workflows/release.yml`, triggered on `push`, with two jobs on `ubuntu-latest`:
+
+- `build-and-scan`:
+  1. check out the code
+  2. copy the runner's packages into the build context: `cp -r /opt/wheels wheels`
+  3. build the image `registry:5000/inventory/api:${{ github.sha }}`
+  4. scan it with the Trivy command above
+- `deploy`, which needs `build-and-scan`:
+  1. log in to `registry:5000` with the secrets
+  2. tag the image as `registry:5000/inventory/api:prod` and push both tags
+
+### Task 2: See the gate stop the deployment
+
+Commit and push the workflow without other changes. The scan must fail (the app pins an old, vulnerable Django), and `deploy` must be skipped, so no `prod` tag reaches the registry.
+
+### Task 3: Fix and release
+
+Upgrade Django in `requirements.txt` to `django==6.1.2`, commit and push. This time the scan passes and `deploy` pushes the `prod` tag.
+
+## Notes
+
+- Both jobs run on the same runner, so the image built in the first job is available to the second.
+- Do not weaken the gate (no `|| true`, lower severity or `--exit-code 0`).
+
+## Expected outcome
+
+One run where the scan blocked the deployment, and a latest run that scanned the fixed image and pushed it as `prod` to the registry.
+
+ANSWER
+======
+```bash
+cd /home/user/inventory-api
+mkdir -p .gitea/workflows
+cat > .gitea/workflows/release.yml <<'END'
+name: Release
+on: push
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Provide the Python packages
+        run: cp -r /opt/wheels wheels
+      - name: Build the image
+        run: docker build -t registry:5000/inventory/api:${{ github.sha }} .
+      - name: Scan the image
+        run: trivy image --severity CRITICAL --pkg-types library --ignore-unfixed --exit-code 1 registry:5000/inventory/api:${{ github.sha }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-scan
+    steps:
+      - name: Log in to the registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login registry:5000 -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+      - name: Push the release
+        run: |
+          docker tag registry:5000/inventory/api:${{ github.sha }} registry:5000/inventory/api:prod
+          docker push registry:5000/inventory/api:${{ github.sha }}
+          docker push registry:5000/inventory/api:prod
+END
+git add .gitea && git commit -m "Add release pipeline with image scan" && git push     # scan fails, deploy skipped
+
+echo "django==6.1.2" > requirements.txt
+git commit -am "Upgrade Django to a patched version" && git push                    # scan passes, deploy runs
+```
+
+APPROACH
+========
+1. Read the `Dockerfile` to see how `wheels/` is used.
+2. Write `release.yml` with the two jobs and push it.
+3. Open the failed run, read the Trivy table, and confirm `deploy` was skipped.
+4. Update `requirements.txt`, push, and watch the second run deploy.
+5. Check the registry: `curl -s -u ci:'registry@123!' http://registry:5000/v2/inventory/api/tags/list`.
+
+HINT
+====
+- `needs: build-and-scan` makes `deploy` wait for the first job and skip when it fails.
+- Docker tagging: `docker tag SOURCE TARGET`, then `docker push TARGET`.
+- The Trivy report lists the vulnerable library and the version that fixes it.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/inventory-api
+wait_run() {
+  local sha
+  sha=$(git rev-parse HEAD)
+  for _ in $(seq 1 150); do
+    curl -sf -u "$GITEA_USER:$GITEA_PASSWORD" "$GITEA_URL/api/v1/repos/$GITEA_USER/inventory-api/actions/runs?limit=20" \
+      | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if any(r['head_sha']=='$sha' and r['status']=='completed' for r in d.get('workflow_runs') or []) else 1)" && return 0
+    sleep 3
+  done
+  return 1
+}
+mkdir -p .gitea/workflows
+cat > .gitea/workflows/release.yml <<'END'
+name: Release
+on: push
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Provide the Python packages
+        run: cp -r /opt/wheels wheels
+      - name: Build the image
+        run: docker build -t registry:5000/inventory/api:${{ github.sha }} .
+      - name: Scan the image
+        run: trivy image --severity CRITICAL --pkg-types library --ignore-unfixed --exit-code 1 registry:5000/inventory/api:${{ github.sha }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-scan
+    steps:
+      - name: Log in to the registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login registry:5000 -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
+      - name: Push the release
+        run: |
+          docker tag registry:5000/inventory/api:${{ github.sha }} registry:5000/inventory/api:prod
+          docker push registry:5000/inventory/api:${{ github.sha }}
+          docker push registry:5000/inventory/api:prod
+END
+git add .gitea && git commit -qm "Add release pipeline with image scan" && git push -q
+wait_run
+printf '%s\n' "$PIP_DJANGO" > requirements.txt
+git commit -qam "Upgrade Django to a patched version" && git push -q
+wait_run

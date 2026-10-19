@@ -1,0 +1,113 @@
+Topic: Kubernetes Services
+Topic ID: kubernetes-services
+Question: 3
+Title: Service Port and Target Port
+Lab ID: k8s-service-target-port
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/10-kubernetes-services/03-target-port
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+A Service's `port` is the port clients connect to; its `targetPort` is the port the container actually listens on. They do not have to be the same. A mismatch is a classic cause of "connection refused" errors, so it pays to understand the mapping.
+
+The Deployment `payments` already runs in the cluster. Its container listens on port `9898` and the port is **named** `http` in the Pod spec.
+
+## Tasks
+
+### Task 1: Inspect the container port
+
+Find the port number and port name of the `payments` container.
+
+### Task 2: Create the Service
+
+Create a ClusterIP Service:
+
+- name: `payments-svc`
+- selecting the `payments` Pods
+- `port: 8080` (what clients use)
+- `targetPort: http` (the **name** of the container port, not the number)
+
+### Task 3: Prove the traffic arrives
+
+From a temporary Pod inside the cluster, request `http://payments-svc:8080/version` and save the response body to `/home/user/payments-version.json`.
+
+### Task 4: Explain the mapping
+
+Create `/home/user/port-mapping.txt` with:
+
+```
+service_port=<port clients connect to>
+target_port=<container port number that receives the traffic>
+endpoint=<one endpoint as ip:port, as listed for the Service>
+```
+
+## Notes
+
+- Using a port **name** as the target means the Service keeps working even if the container port number changes later.
+
+## Expected outcome
+
+`payments-svc` forwards port 8080 to the container's `http` port (9898), and the saved response came from the application.
+
+ANSWER
+======
+```bash
+kubectl get deployment payments -o jsonpath='{.spec.template.spec.containers[0].ports}'
+cat <<'END' | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-svc
+spec:
+  selector:
+    app: payments
+  ports:
+    - port: 8080
+      targetPort: http
+END
+kubectl run curl-test --image=busybox:1.38.0 --rm -i --restart=Never -- wget -qO- http://payments-svc:8080/version > /home/user/payments-version.json
+kubectl get endpointslices -l kubernetes.io/service-name=payments-svc -o wide
+ep=$(kubectl get endpointslices -l kubernetes.io/service-name=payments-svc -o jsonpath='{.items[0].endpoints[0].addresses[0]}')
+printf 'service_port=8080\ntarget_port=9898\nendpoint=%s:9898\n' "$ep" > /home/user/port-mapping.txt
+```
+
+APPROACH
+========
+1. Inspect the deployment's container ports.
+2. Write a Service manifest with `port: 8080` and `targetPort: http`, then apply it.
+3. Run a temporary busybox Pod with `wget -qO- http://payments-svc:8080/version` and save the output.
+4. Look at the endpoints: the port there is 9898, the resolved target. Write `port-mapping.txt`.
+
+HINT
+====
+- `kubectl get deployment payments -o yaml` shows `ports:` with `name` and `containerPort`.
+- In a Service manifest, `targetPort` can be a number or the name of a container port.
+- `kubectl get endpointslices -l kubernetes.io/service-name=payments-svc` shows addresses and the resolved port.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+kubectl rollout status deployment/payments --timeout=300s
+cat <<'END' | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-svc
+spec:
+  selector:
+    app: payments
+  ports:
+    - port: 8080
+      targetPort: http
+END
+sleep 3
+kubectl run curl-test --image="$IMAGE_BUSYBOX" --rm -i --restart=Never --quiet -- wget -qO- http://payments-svc:8080/version > /home/user/payments-version.json
+ep=$(kubectl get endpointslices -l kubernetes.io/service-name=payments-svc -o jsonpath='{.items[0].endpoints[0].addresses[0]}')
+printf 'service_port=8080\ntarget_port=9898\nendpoint=%s:9898\n' "$ep" > /home/user/port-mapping.txt

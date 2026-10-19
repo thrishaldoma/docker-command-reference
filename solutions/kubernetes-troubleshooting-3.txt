@@ -1,0 +1,91 @@
+Topic: Kubernetes Troubleshooting
+Topic ID: kubernetes-troubleshooting
+Question: 3
+Title: Fix a Service with the Wrong Selector
+Lab ID: k8s-service-selector
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/13-kubernetes-troubleshooting/03-selector
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Scenario
+
+The `frontend` Pods are running and healthy, yet every request to the `frontend-svc` Service fails. Nothing looks broken at first sight. Use labels, selectors, endpoints and the Service configuration to find the problem, then fix it.
+
+## Tasks
+
+### Task 1: Diagnose
+
+Compare the labels of the `frontend` Pods with the selector of `frontend-svc`, and look at the Service's endpoints.
+
+### Task 2: Record the diagnosis
+
+Create `/home/user/diagnosis.txt` with:
+
+```
+endpoints_before=<number of endpoint addresses frontend-svc had before your fix>
+service_selector=<the Service's selector before your fix, as key=value>
+pod_labels=<the app label of the frontend Pods, as key=value>
+```
+
+### Task 3: Fix it
+
+Fix the **Service** so it selects the `frontend` Pods. Do not change the Deployment or its Pod labels: other tools depend on them.
+
+### Task 4: Verify
+
+Check that `frontend-svc` now has the `frontend` Pods as endpoints, and that a request through the Service works, for example:
+
+```
+kubectl run curl-test --image=busybox:1.38.0 --rm -i --restart=Never -- wget -qO- http://frontend-svc/
+```
+
+## Notes
+
+- A Service with no matching Pods has no endpoints, so connections to it fail even though nothing has crashed.
+
+## Expected outcome
+
+`frontend-svc` selects the `frontend` Pods and serves requests, the Deployment is unchanged, and your diagnosis explains the mismatch.
+
+ANSWER
+======
+```bash
+kubectl get pods -l app=frontend --show-labels
+kubectl describe service frontend-svc          # Selector: app=front-end, Endpoints: <none>
+
+cat > /home/user/diagnosis.txt <<'END'
+endpoints_before=0
+service_selector=app=front-end
+pod_labels=app=frontend
+END
+
+kubectl patch service frontend-svc -p '{"spec":{"selector":{"app":"frontend"}}}'
+kubectl get endpointslices -l kubernetes.io/service-name=frontend-svc
+kubectl run curl-test --image=busybox:1.38.0 --rm -i --restart=Never -- wget -qO- http://frontend-svc/
+```
+
+APPROACH
+========
+1. Look at the Pod labels and the Service selector side by side: one character differs.
+2. Count the endpoints (none) and write `diagnosis.txt`.
+3. Patch the Service's selector to match the Pod label.
+4. Check the endpoints again and test with a temporary busybox Pod.
+
+HINT
+====
+- `kubectl get pods --show-labels` shows the labels; `kubectl describe service frontend-svc` shows the selector and the endpoints.
+- `kubectl get endpointslices -l kubernetes.io/service-name=frontend-svc` lists endpoint addresses.
+- `kubectl edit service frontend-svc` or `kubectl patch service frontend-svc -p '{"spec":{"selector":{...}}}'` changes the selector.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+printf 'endpoints_before=0\nservice_selector=app=front-end\npod_labels=app=frontend\n' > /home/user/diagnosis.txt
+kubectl patch service frontend-svc -p '{"spec":{"selector":{"app":"frontend"}}}'
+sleep 3

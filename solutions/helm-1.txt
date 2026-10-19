@@ -1,0 +1,129 @@
+Topic: Helm
+Topic ID: helm
+Question: 1
+Title: Create a Helm Chart
+Lab ID: helm-create-chart
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/14-helm/01-create-chart
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Helm packages Kubernetes manifests as a **chart**: templates with placeholders, default values for those placeholders, and metadata. You will create a chart for a simple web application, adjust it, check that it renders valid manifests, and explain what its main parts are for.
+
+## Tasks
+
+### Task 1: Create the chart
+
+In `/home/user/charts`, create a new chart named `webapp` with `helm create`.
+
+### Task 2: Set the metadata
+
+Edit `/home/user/charts/webapp/Chart.yaml`:
+
+- `description`: `A simple web application`
+- `version`: `0.2.0`
+- `appVersion`: `"1.0.0"`
+
+### Task 3: Set the default values
+
+Edit `/home/user/charts/webapp/values.yaml` so the chart deploys `nginx:1.30.6-alpine` by default:
+
+- `image.repository`: the part before the colon
+- `image.tag`: the part after the colon
+- `replicaCount`: `2`
+
+### Task 4: Check the chart
+
+The chart must pass `helm lint`, and `helm template` must render a Deployment that uses the image above. Save the rendered manifests to `/home/user/charts/webapp-rendered.yaml`.
+
+### Task 5: Explain the parts
+
+`/home/user/charts/parts.txt` lists numbered descriptions (`D1`, `D2`, ...). Create `/home/user/charts/purpose.txt` that names the right description for each part:
+
+```
+Chart.yaml=<description ID>
+values.yaml=<description ID>
+templates=<description ID>
+```
+
+## Notes
+
+- You do not need to install the chart in this lab.
+
+## Expected outcome
+
+A lint-clean chart `webapp` with your metadata and defaults, its rendered output, and a correct explanation of Chart.yaml, values.yaml and the templates directory.
+
+ANSWER
+======
+```bash
+cd /home/user/charts
+helm create webapp
+sed -i 's/^description:.*/description: A simple web application/; s/^version:.*/version: 0.2.0/; s/^appVersion:.*/appVersion: "1.0.0"/' webapp/Chart.yaml
+```
+
+Edit `webapp/values.yaml` (the image `nginx:1.30.6-alpine` split at the colon):
+
+```yaml
+replicaCount: 2
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+  tag: "<tag of nginx:1.30.6-alpine>"
+```
+
+```bash
+helm lint ./webapp
+helm template webapp ./webapp > webapp-rendered.yaml
+grep 'image:' webapp-rendered.yaml
+```
+
+For `purpose.txt`, choose (IDs differ per session):
+
+- Chart.yaml: metadata about the chart, such as its name, version and app version
+- values.yaml: default configuration values that templates read and users can override
+- templates: Kubernetes manifests with placeholders that Helm fills in from the values
+
+APPROACH
+========
+1. Create the chart with `helm create`.
+2. Edit `Chart.yaml` and `values.yaml` with `nano`.
+3. Run `helm lint ./webapp` until it reports no failures.
+4. Render with `helm template` and check the `image:` line of the Deployment.
+5. Read `parts.txt` and write `purpose.txt`.
+
+HINT
+====
+- `cd /home/user/charts && helm create webapp` generates a complete starter chart.
+- In `values.yaml`, `image:` already has `repository:` and `tag:` keys.
+- `helm lint ./webapp` and `helm template webapp ./webapp > webapp-rendered.yaml`
+- Chart.yaml describes the chart itself, values.yaml holds settings, and templates/ holds the manifests that use those settings.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/charts
+helm create webapp >/dev/null
+sed -i 's/^description:.*/description: A simple web application/; s/^version:.*/version: 0.2.0/; s/^appVersion:.*/appVersion: "1.0.0"/' webapp/Chart.yaml
+repo=${IMAGE_NGINX%:*}
+tag=${IMAGE_NGINX##*:}
+python3 - "$repo" "$tag" <<'PY'
+import re, sys
+p = "webapp/values.yaml"
+s = open(p).read()
+s = re.sub(r"^replicaCount:.*$", "replicaCount: 2", s, flags=re.M)
+s = re.sub(r"^(\s+repository:).*$", r"\1 " + sys.argv[1], s, count=1, flags=re.M)
+s = re.sub(r'^(\s+tag:).*$', r'\1 "' + sys.argv[2] + '"', s, count=1, flags=re.M)
+open(p, "w").write(s)
+PY
+helm lint ./webapp >/dev/null
+helm template webapp ./webapp > webapp-rendered.yaml
+c() { grep -E "$1" parts.txt | cut -d: -f1; }
+printf 'Chart.yaml=%s\nvalues.yaml=%s\ntemplates=%s\n' "$(c 'Metadata')" "$(c 'Default configuration')" "$(c 'placeholders')" > purpose.txt

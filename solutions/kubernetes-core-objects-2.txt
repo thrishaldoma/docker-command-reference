@@ -1,0 +1,112 @@
+Topic: Kubernetes Core Objects
+Topic ID: kubernetes-core-objects
+Question: 2
+Title: Scale a Deployment Up and Down
+Lab ID: k8s-scale-deployment
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/09-kubernetes-core-objects/02-scale-deployment
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+A Deployment keeps a requested number of identical Pods (replicas) running. Scaling it changes that number, and Kubernetes creates or removes Pods to match. You will scale a Deployment up for a traffic peak and back down afterwards, verifying the replica count at every step.
+
+## Tasks
+
+### Task 1: Create the Deployment
+
+Create a Deployment:
+
+- name: `shop-api`
+- image: `stefanprodan/podinfo:6.15.0`
+- replicas: `2`
+
+Wait until both replicas are ready.
+
+### Task 2: Scale up
+
+Scale `shop-api` to `5` replicas and wait until all five are ready.
+
+### Task 3: Scale back down
+
+Scale `shop-api` back to `2` replicas and wait until only two Pods remain.
+
+### Task 4: Record each step
+
+After each of the three steps, append the output of this command to `/home/user/replicas.txt`:
+
+```
+kubectl get deployment shop-api -o jsonpath='{.status.readyReplicas}{"\n"}' >> /home/user/replicas.txt
+```
+
+The file must end up with three lines: `2`, `5` and `2`.
+
+## Notes
+
+- Use `kubectl scale`, or edit the replica count and `kubectl apply` again. Both are fine.
+- The checker also reads the Deployment's events to confirm that the scaling really happened.
+
+## Expected outcome
+
+`shop-api` runs 2 ready replicas, its events show the scale-up to 5 and back to 2, and `replicas.txt` contains 2, 5 and 2.
+
+ANSWER
+======
+```bash
+record() { kubectl get deployment shop-api -o jsonpath='{.status.readyReplicas}{"\n"}' >> /home/user/replicas.txt; }
+
+kubectl create deployment shop-api --image=stefanprodan/podinfo:6.15.0 --replicas=2
+kubectl rollout status deployment/shop-api
+record
+
+kubectl scale deployment shop-api --replicas=5
+kubectl rollout status deployment/shop-api
+record
+
+kubectl scale deployment shop-api --replicas=2
+kubectl wait --for=delete pod -l app=shop-api --timeout=60s 2>/dev/null; sleep 5
+kubectl get pods -l app=shop-api
+record
+
+cat /home/user/replicas.txt
+```
+
+APPROACH
+========
+1. Create the deployment and wait with `kubectl rollout status`.
+2. Append the ready count to `replicas.txt`.
+3. Scale to 5, wait, append.
+4. Scale to 2, wait until the extra Pods are gone, append.
+5. `cat /home/user/replicas.txt` should show 2, 5 and 2. `kubectl describe deployment shop-api` lists the scaling events.
+
+HINT
+====
+- `kubectl create deployment shop-api --image=... --replicas=2`
+- `kubectl scale deployment shop-api --replicas=5`
+- `kubectl rollout status deployment/shop-api` waits until the new replica count is ready. When scaling down, wait until `kubectl get pods` shows only two Pods.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+record() { kubectl get deployment shop-api -o jsonpath='{.status.readyReplicas}{"\n"}' >> /home/user/replicas.txt; }
+wait_ready() {
+  for _ in $(seq 1 120); do
+    r=$(kubectl get deployment shop-api -o jsonpath='{.status.readyReplicas}')
+    n=$(kubectl get pods -l app=shop-api --no-headers 2>/dev/null | wc -l)
+    [ "$r" = "$1" ] && [ "$n" = "$1" ] && return 0
+    sleep 2
+  done
+  return 1
+}
+kubectl create deployment shop-api --image="$IMAGE_PODINFO" --replicas=2
+wait_ready 2; record
+kubectl scale deployment shop-api --replicas=5
+wait_ready 5; record
+kubectl scale deployment shop-api --replicas=2
+wait_ready 2; record

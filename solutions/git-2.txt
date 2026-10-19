@@ -1,0 +1,103 @@
+Topic: Git and GitHub
+Topic ID: git
+Question: 2
+Title: Audit a Repository's History
+Lab ID: git-audit-history
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/05-git/02-audit-history
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Scenario
+
+You are working with an existing Git repository (`audit-tracker-repo`) that contains multiple commits created by different authors. As part of an audit and troubleshooting exercise, you need to inspect the repository history to identify recent changes and bug fixes.
+
+## Important
+
+Do not manually edit or create the output files. Each file must be generated only by redirecting the output of the appropriate `git` command, for example `git <command> > file.txt`.
+
+## Tasks
+
+Perform all tasks from the root of the repository, `/home/user/audit-tracker-repo`. Feel free to research the different flags that `git log` offers.
+
+### Task 1: View Commit History in Compact Format
+
+Display the commit history in a compact, single-line format.
+Redirect the output to: `/home/user/audit-tracker-repo/compact-history.txt`
+
+### Task 2: Identify the Last 3 Commits
+
+Display details of the most recent 3 commits.
+Redirect the output to: `/home/user/audit-tracker-repo/last-3-commits.txt`
+
+### Task 3: Identify the Author of the Most Recent Commit
+
+Determine the author name of the latest commit.
+Redirect the output to: `/home/user/audit-tracker-repo/latest-author.txt`
+The file must contain only the command output (just the name).
+
+### Task 4: Find Bug Fix Commits
+
+Search the commit history for commits related to bug fixes using commit messages. Look for commits whose messages contain the keywords `fix` or `bug`.
+Redirect the output to: `/home/user/audit-tracker-repo/bugfix-commits.txt`
+
+### Task 5: Inspect Changes in the Most Recent Commit
+
+Inspect the changes introduced in the latest commit.
+Redirect the output to: `/home/user/audit-tracker-repo/latest-commit-changes.txt`
+
+## Validation Criteria
+
+- All required files are present with the exact file names.
+- Each file contains valid Git command output.
+- No file contains manually typed or edited content.
+- The outputs correctly reflect the requested commit history information.
+- Do not commit the output files or change the history.
+
+## Expected Learning Outcomes
+
+- Inspect Git history.
+- Identify recent commits and commit authors.
+- Search commit history using message-based filters.
+- Review commit-level changes for auditing and debugging.
+- Produce automation-friendly outputs using command redirection.
+
+ANSWER
+======
+```bash
+cd /home/user/audit-tracker-repo
+git log --oneline > compact-history.txt
+git log -3 > last-3-commits.txt
+git log -1 --format=%an > latest-author.txt
+git log --oneline --grep=fix --grep=bug > bugfix-commits.txt
+git show > latest-commit-changes.txt
+```
+
+APPROACH
+========
+1. `cd /home/user/audit-tracker-repo` and look around with `git log`.
+2. For each task, run the command on screen first. When the output looks right, run it again with `> file.txt` at the end.
+3. Check each file with `cat`. If a file is wrong, regenerate it with the corrected command rather than editing it.
+
+HINT
+====
+- `git log --oneline` prints one line per commit.
+- `git log -3` (or `-n 3`) limits the output to three commits.
+- `git log -1 --format=%an` prints only the author name of the latest commit.
+- `git log --grep=fix --grep=bug` matches commits whose message contains either word.
+- `git show` displays the latest commit with its diff.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/audit-tracker-repo
+git log --oneline > compact-history.txt
+git log -3 > last-3-commits.txt
+git log -1 --format=%an > latest-author.txt
+git log --oneline --grep=fix --grep=bug > bugfix-commits.txt
+git show > latest-commit-changes.txt

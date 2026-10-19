@@ -1,0 +1,116 @@
+Topic: Linux
+Topic ID: linux
+Question: 1
+Title: Basic Linux Commands
+Lab ID: linux-basic-commands
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/02-linux/01-basic-commands
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+In this assignment, you will practice basic Linux commands. For each task, you must store your answer in a file named `answer.txt` using the `echo` command.
+
+After completing all tasks, click the **Run Task And Submit** button to test your answers.
+
+### Important Note
+
+In the question, we are using the `echo` command. It is commonly used in shell scripts and command-line operations to output text to the terminal or write text to a file.
+
+General format:
+
+```
+echo <value> >> /home/user/answer.txt
+```
+
+Replace `<value>` with the required answer.
+
+### TASK 1: Find Current Directory
+
+Run a command to display your current working directory. Copy the output shown in the terminal. Store that output in `answer.txt`.
+
+Example: if the command returns `/var/lib`, then store it as:
+
+```
+echo /var/lib >> /home/user/answer.txt
+```
+
+### TASK 2: Change Directory
+
+A directory named `task_1` exists in your current location. Use a Linux command to move into the `task_1` directory. Store only the command name (not the full command or path) in `answer.txt`.
+
+Example: `echo <cmd_name> >> /home/user/answer.txt`
+
+### TASK 3: List Directory Contents
+
+Inside the `task_1` directory, use a Linux command to list files and directories. Store only the command name in `answer.txt`.
+
+Example: `echo <cmd_name> >> /home/user/answer.txt`
+
+### TASK 4: Find Hidden File
+
+There is a hidden file inside the `task_1` directory. Use the command with appropriate flags to display hidden files. Identify the hidden file. Store only the file name (not the command) in `answer.txt`.
+
+Example: `echo <hidden_file_name> >> /home/user/answer.txt`
+
+### Final Notes
+
+- Run Task 1 from the directory the terminal opens in.
+- For Task 2 and Task 3, store only the command name.
+- Do not include extra spaces or text.
+- Make sure all answers are appended to the same file, `/home/user/answer.txt`, one per line and in task order.
+
+### Expected outcome
+
+`/home/user/answer.txt` contains exactly four lines: the working directory, the command that changes directory, the command that lists a directory, and the hidden file's name.
+
+ANSWER
+======
+```bash
+pwd                                    # prints /home/user
+echo /home/user >> /home/user/answer.txt
+
+cd task_1
+echo cd >> /home/user/answer.txt
+
+ls
+echo ls >> /home/user/answer.txt
+
+ls -a                                  # shows the hidden file, for example .deploy_token
+echo .deploy_token >> /home/user/answer.txt   # use the name you actually see
+
+cat /home/user/answer.txt
+```
+
+The hidden file name is different in every lab session, so use the name `ls -a` shows you.
+
+APPROACH
+========
+1. Open the terminal. It starts in your home directory. Run `pwd` and append its output to `answer.txt`.
+2. Move into `task_1` with `cd task_1`, then append the command name `cd`.
+3. List the directory with `ls`, then append `ls`.
+4. Run `ls -a` (or `ls -la`) to show hidden entries. Append the name of the file that starts with a dot.
+5. Check the result with `cat /home/user/answer.txt`. If you made a mistake, remove the file with `rm /home/user/answer.txt` and start again.
+
+HINT
+====
+- `pwd` prints the current working directory.
+- `cd` changes directory and `ls` lists a directory.
+- Hidden files start with a dot. `ls` hides them unless you add a flag such as `-a`.
+- Use `>>` to append. A single `>` would overwrite the file.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user
+echo "$(pwd)" >> /home/user/answer.txt
+cd task_1
+echo cd >> /home/user/answer.txt
+ls >/dev/null
+echo ls >> /home/user/answer.txt
+hidden=$(ls -A | grep '^\.' | head -n1)
+echo "$hidden" >> /home/user/answer.txt

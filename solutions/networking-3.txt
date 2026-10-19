@@ -1,0 +1,121 @@
+Topic: Networking
+Topic ID: networking
+Question: 3
+Title: Resolve Names and Test HTTP and HTTPS
+Lab ID: networking-dns-http
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/04-networking/03-dns-http
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+The company runs its own DNS server for the internal zone `devops.lab`. Your machine is already configured to use it. You will resolve names with `nslookup` or `dig`, then check whether the websites behind those names answer over HTTP and HTTPS, and record what you find.
+
+## Tasks
+
+### Task 1: Resolve the names
+
+Find out:
+
+- the IPv4 address (A record) of `shop.devops.lab`
+- the name that `www.devops.lab` is an alias (CNAME) for
+- the IPv4 address of `secure.devops.lab`
+- the IP address of the DNS server that answered your queries
+
+### Task 2: Test the websites
+
+Find the HTTP status code that each request returns, **without following redirects**:
+
+- `http://shop.devops.lab/`
+- `http://shop.devops.lab/old-catalog`
+- `https://secure.devops.lab/` (the site uses a self-signed certificate, so tell curl not to verify it)
+- `http://secure.devops.lab/` (plain HTTP)
+
+### Task 3: Record the results
+
+Create `/home/user/dns-report.txt` with exactly these lines:
+
+```
+shop_ip=<A record of shop.devops.lab>
+www_cname=<target of the CNAME, without a trailing dot>
+secure_ip=<A record of secure.devops.lab>
+dns_server=<IP address of the DNS server>
+shop_status=<status of http://shop.devops.lab/>
+shop_old_catalog_status=<status of http://shop.devops.lab/old-catalog>
+secure_https_status=<status of https://secure.devops.lab/>
+secure_http_status=<status of http://secure.devops.lab/>
+```
+
+## Notes
+
+- Skipping certificate verification (`curl -k`) is acceptable here only because this is a local lab service with a self-signed certificate.
+- `/etc/resolv.conf` shows which DNS server the machine uses.
+
+## Expected outcome
+
+`dns-report.txt` lists the DNS answers, the DNS server and the four HTTP status codes.
+
+ANSWER
+======
+```bash
+cat /etc/resolv.conf                     # nameserver <dns server ip>
+dig +short shop.devops.lab               # A record
+dig www.devops.lab | grep CNAME          # www.devops.lab. ... CNAME shop.devops.lab.
+dig +short secure.devops.lab
+nslookup shop.devops.lab                 # "Server:" shows the DNS server too
+
+code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
+code http://shop.devops.lab/             # 200
+code http://shop.devops.lab/old-catalog  # 301
+code -k https://secure.devops.lab/       # 200
+code http://secure.devops.lab/           # 301
+```
+
+Then write the values you got:
+
+```bash
+cat > /home/user/dns-report.txt <<END
+shop_ip=$(dig +short shop.devops.lab | tail -n1)
+www_cname=shop.devops.lab
+secure_ip=$(dig +short secure.devops.lab | tail -n1)
+dns_server=$(awk '/^nameserver/ {print $2; exit}' /etc/resolv.conf)
+shop_status=200
+shop_old_catalog_status=301
+secure_https_status=200
+secure_http_status=301
+END
+```
+
+APPROACH
+========
+1. Run `cat /etc/resolv.conf` to see the DNS server.
+2. Use `dig` or `nslookup` for `shop.devops.lab`, `www.devops.lab` and `secure.devops.lab`.
+3. Use `curl -s -o /dev/null -w '%{http_code}\n'` for the four URLs. Add `-k` only for the HTTPS one.
+4. Write the eight lines into `dns-report.txt`.
+
+HINT
+====
+- `dig +short shop.devops.lab` prints only the answer. `dig www.devops.lab` shows a `CNAME` line in the ANSWER section.
+- `nslookup` prints the server it asked on its first lines (`Server:`), and so does the `;; SERVER:` line of `dig`.
+- `curl -s -o /dev/null -w '%{http_code}\n' URL` prints only the status code. curl does not follow redirects unless you add `-L`.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+code() { curl -s -o /dev/null --max-time 10 -w '%{http_code}' "$@"; }
+cat > /home/user/dns-report.txt <<END
+shop_ip=$(dig +short shop.devops.lab | tail -n1)
+www_cname=$(dig +short www.devops.lab CNAME | sed 's/\.$//')
+secure_ip=$(dig +short secure.devops.lab | tail -n1)
+dns_server=$(awk '/^nameserver/ {print $2; exit}' /etc/resolv.conf)
+shop_status=$(code http://shop.devops.lab/)
+shop_old_catalog_status=$(code http://shop.devops.lab/old-catalog)
+secure_https_status=$(code -k https://secure.devops.lab/)
+secure_http_status=$(code http://secure.devops.lab/)
+END

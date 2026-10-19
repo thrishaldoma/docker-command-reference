@@ -1,0 +1,98 @@
+Topic: Helm
+Topic ID: helm
+Question: 3
+Title: Upgrade and Roll Back a Helm Release
+Lab ID: helm-upgrade-rollback
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/14-helm/03-upgrade-rollback
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Every `helm install`, `helm upgrade` and `helm rollback` creates a new **revision** of a release, and Helm keeps the history. That makes upgrades safe: if one goes wrong, you roll back to a known good revision with one command. You will upgrade a release, inspect its history and roll back.
+
+The release `catalog` is already installed in the `catalog` namespace from the chart in `/home/user/charts/catalog` (revision 1). It runs one replica of `stefanprodan/podinfo:6.14.1`.
+
+## Tasks
+
+### Task 1: Inspect the release
+
+Look at the release status, its values and its history.
+
+### Task 2: Upgrade
+
+Upgrade `catalog` (from the same chart) so that it runs:
+
+- image tag: the tag of `stefanprodan/podinfo:6.15.0`
+- `replicaCount`: `2`
+
+This creates revision 2. Wait until it is rolled out.
+
+### Task 3: Inspect the history
+
+Save the output of `helm history catalog -n catalog` to `/home/user/charts/history-after-upgrade.txt`.
+
+### Task 4: Roll back
+
+Roll the release back to **revision 1**. Wait until the Deployment is back to one replica of the old version.
+
+### Task 5: Verify the final state
+
+Save `helm history catalog -n catalog` again to `/home/user/charts/history-after-rollback.txt` and `helm status catalog -n catalog` to `/home/user/charts/final-status.txt`.
+
+## Notes
+
+- Use `--set` or a values file for the upgrade. Keep the image repository unchanged.
+- A rollback does not delete revision 2; it creates revision 3 with the contents of revision 1.
+
+## Expected outcome
+
+Release `catalog` is at revision 3 (a rollback to 1), status `deployed`, running one replica of the old image, with the history showing all three revisions.
+
+ANSWER
+======
+```bash
+cd /home/user/charts
+helm status catalog -n catalog
+helm get values catalog -n catalog
+helm history catalog -n catalog
+
+helm upgrade catalog ./catalog -n catalog --reuse-values \
+  --set image.tag=<tag of stefanprodan/podinfo:6.15.0> --set replicaCount=2 --wait
+helm history catalog -n catalog > history-after-upgrade.txt
+
+helm rollback catalog 1 -n catalog --wait
+helm history catalog -n catalog > history-after-rollback.txt
+helm status catalog -n catalog > final-status.txt
+kubectl get deploy catalog -n catalog -o wide
+```
+
+APPROACH
+========
+1. Inspect status, values and history.
+2. Upgrade with `--set` for the tag and replica count (keep the other values with `--reuse-values`).
+3. Save the history: two revisions, the first superseded.
+4. Roll back to revision 1 and wait.
+5. Save the history (three revisions, the last one "Rollback to 1") and the status.
+
+HINT
+====
+- `helm status catalog -n catalog`, `helm get values catalog -n catalog`, `helm history catalog -n catalog`
+- `helm upgrade catalog ./catalog -n catalog --reuse-values --set image.tag=... --set replicaCount=2 --wait`
+- `helm rollback catalog 1 -n catalog --wait`
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/charts
+helm upgrade catalog ./catalog -n catalog --reuse-values --set image.tag="${IMAGE_PODINFO##*:}" --set replicaCount=2 --wait --timeout 5m >/dev/null
+helm history catalog -n catalog > history-after-upgrade.txt
+helm rollback catalog 1 -n catalog --wait --timeout 5m >/dev/null
+helm history catalog -n catalog > history-after-rollback.txt
+helm status catalog -n catalog > final-status.txt

@@ -1,0 +1,179 @@
+Topic: Shell Scripting
+Topic ID: shell-scripting
+Question: 5
+Title: Reusable System Health Script
+Lab ID: shell-health-report
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/03-shell-scripting/05-health-report
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Operations teams run small health scripts on every server. Write a reusable one that uses **variables, conditions, loops and functions**, reports uptime, memory and disk usage, and turns the result into a simple OK or WARNING status that other tools can act on.
+
+## Tasks
+
+Create the script `/home/user/scripts/health.sh`. It takes one optional argument, a usage threshold in percent (default `80`):
+
+```
+bash /home/user/scripts/health.sh        # threshold 80
+bash /home/user/scripts/health.sh 90     # threshold 90
+```
+
+### Task 1: Structure
+
+The script must:
+
+- store the threshold in a variable named `THRESHOLD` (from the first argument, or `80` when there is none),
+- store the paths to check in a variable named `PATHS_TO_CHECK` with the value `"/ /var /tmp"`,
+- define three functions named `show_uptime`, `check_memory` and `check_disk`, and call them,
+- use a loop in `check_disk` to check every path in `PATHS_TO_CHECK`,
+- use `if` conditions to decide the status.
+
+### Task 2: Output
+
+Print exactly this format (one line per path, in the order of `PATHS_TO_CHECK`):
+
+```
+System Health Report
+Uptime: up 2 hours, 5 minutes
+Memory: 41% used
+Disk /: 63% used
+Disk /var: 63% used
+Disk /tmp: 63% used
+Status: OK
+```
+
+- `Uptime:` is followed by the output of `uptime -p`.
+- `Memory:` is the percentage of memory in use, calculated as `(total - available) * 100 / total` from `free` (or `/proc/meminfo`), rounded down to a whole number.
+- `Disk <path>:` is the use percentage that `df` reports for that path.
+
+### Task 3: Status and exit code
+
+- If the memory percentage **or** any disk percentage is greater than or equal to `THRESHOLD`, print `Status: WARNING` and exit with status `1`.
+- Otherwise print `Status: OK` and exit with status `0`.
+
+### Task 4: Validate the threshold
+
+If the threshold is not a whole number from 1 to 100, print this line to standard error and exit with status `2`:
+
+```
+Error: threshold must be a number between 1 and 100
+```
+
+## Notes
+
+- The checker compares your numbers with values it measures itself, allowing a small difference because memory use changes between two measurements.
+- The checker runs the script with different thresholds to test both statuses.
+
+## Expected outcome
+
+`health.sh` prints a correct report and exits with 0, 1 or 2 depending on the measurements and the threshold.
+
+ANSWER
+======
+```bash
+cat > /home/user/scripts/health.sh <<'END'
+#!/bin/bash
+# Reports uptime, memory and disk usage and sets an exit status.
+
+THRESHOLD=${1:-80}
+PATHS_TO_CHECK="/ /var /tmp"
+STATUS=OK
+
+if ! [[ $THRESHOLD =~ ^[0-9]+$ ]] || [ "$THRESHOLD" -lt 1 ] || [ "$THRESHOLD" -gt 100 ]; then
+  echo "Error: threshold must be a number between 1 and 100" >&2
+  exit 2
+fi
+
+show_uptime() {
+  echo "Uptime: $(uptime -p)"
+}
+
+check_memory() {
+  local used
+  used=$(free | awk '/^Mem:/ {print int(($2 - $7) * 100 / $2)}')
+  echo "Memory: ${used}% used"
+  if [ "$used" -ge "$THRESHOLD" ]; then STATUS=WARNING; fi
+}
+
+check_disk() {
+  local path used
+  for path in $PATHS_TO_CHECK; do
+    used=$(df --output=pcent "$path" | tail -n 1 | tr -dc '0-9')
+    echo "Disk $path: ${used}% used"
+    if [ "$used" -ge "$THRESHOLD" ]; then STATUS=WARNING; fi
+  done
+}
+
+echo "System Health Report"
+show_uptime
+check_memory
+check_disk
+echo "Status: $STATUS"
+if [ "$STATUS" = WARNING ]; then exit 1; fi
+exit 0
+END
+chmod +x /home/user/scripts/health.sh
+bash /home/user/scripts/health.sh; echo "exit: $?"
+```
+
+APPROACH
+========
+1. Set `THRESHOLD=${1:-80}` and validate it: a number, at least 1 and at most 100. Otherwise print the error to standard error and `exit 2`.
+2. Set `PATHS_TO_CHECK="/ /var /tmp"` and `STATUS=OK`.
+3. Write `show_uptime` to print `Uptime: $(uptime -p)`.
+4. Write `check_memory` to compute the percentage, print it, and set `STATUS=WARNING` when it reaches the threshold.
+5. Write `check_disk` with a `for` loop over `$PATHS_TO_CHECK` that does the same for each path.
+6. Print the title, call the three functions, print the status, and exit with `0` or `1`.
+7. Test with thresholds `100`, `1`, `abc` and `0`, checking `echo $?` each time.
+
+HINT
+====
+- `free | awk '/^Mem:/ {print int(($2 - $7) * 100 / $2)}'` prints the memory percentage (column 7 is "available").
+- `df --output=pcent / | tail -n 1 | tr -dc '0-9'` prints the disk use of `/` as a bare number.
+- `[[ $1 =~ ^[0-9]+$ ]]` checks that a value is a whole number.
+- Keep a variable such as `STATUS=OK` and change it to `WARNING` inside your checks.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cat > /home/user/scripts/health.sh <<'END'
+#!/bin/bash
+THRESHOLD=${1:-80}
+PATHS_TO_CHECK="/ /var /tmp"
+STATUS=OK
+if ! [[ $THRESHOLD =~ ^[0-9]+$ ]] || [ "$THRESHOLD" -lt 1 ] || [ "$THRESHOLD" -gt 100 ]; then
+  echo "Error: threshold must be a number between 1 and 100" >&2
+  exit 2
+fi
+show_uptime() { echo "Uptime: $(uptime -p)"; }
+check_memory() {
+  local used
+  used=$(free | awk '/^Mem:/ {print int(($2 - $7) * 100 / $2)}')
+  echo "Memory: ${used}% used"
+  if [ "$used" -ge "$THRESHOLD" ]; then STATUS=WARNING; fi
+}
+check_disk() {
+  local path used
+  for path in $PATHS_TO_CHECK; do
+    used=$(df --output=pcent "$path" | tail -n 1 | tr -dc '0-9')
+    echo "Disk $path: ${used}% used"
+    if [ "$used" -ge "$THRESHOLD" ]; then STATUS=WARNING; fi
+  done
+}
+echo "System Health Report"
+show_uptime
+check_memory
+check_disk
+echo "Status: $STATUS"
+if [ "$STATUS" = WARNING ]; then exit 1; fi
+exit 0
+END
+chmod +x /home/user/scripts/health.sh

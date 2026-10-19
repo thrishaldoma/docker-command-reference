@@ -1,0 +1,96 @@
+Topic: Kubernetes Troubleshooting
+Topic ID: kubernetes-troubleshooting
+Question: 2
+Title: Fix a CrashLoopBackOff
+Lab ID: k8s-crashloop-backoff
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/13-kubernetes-troubleshooting/02-crashloop
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Scenario
+
+The `order-worker` Deployment starts, crashes, starts again and crashes again. Kubernetes waits a little longer after every crash, which shows up as `CrashLoopBackOff`. Use the logs and `kubectl describe` to find the root cause, fix the configuration, and verify that the worker recovers.
+
+## Tasks
+
+### Task 1: Diagnose
+
+Read the container logs of an `order-worker` Pod (including the logs of the previous, crashed container) and `kubectl describe` the Pod. The worker explains what it is missing.
+
+### Task 2: Record the root cause
+
+The possible root causes are listed in `/home/user/causes.txt`. Create `/home/user/diagnosis.txt` with:
+
+```
+pod_status=<the status shown in kubectl get pods>
+exit_code=<exit code of the last terminated container>
+root_cause=<the ID of the root cause from causes.txt>
+```
+
+### Task 3: Fix the configuration
+
+The worker needs the setting it complains about. The correct values are kept in the ConfigMap `order-worker-config`, which already exists. Change the `order-worker` Deployment so the container receives that setting **from the ConfigMap** (do not type the value into the Deployment).
+
+### Task 4: Verify the recovery
+
+Wait until the new Pod is running and stays running, and check its logs: it prints `worker started` when it is healthy.
+
+## Notes
+
+- `kubectl logs <pod> --previous` shows the output of the container that crashed.
+
+## Expected outcome
+
+`order-worker` runs without restarting, gets its setting from `order-worker-config`, and `diagnosis.txt` records the status, the exit code and the root cause.
+
+ANSWER
+======
+```bash
+kubectl get pods -l app=order-worker                 # CrashLoopBackOff
+pod=$(kubectl get pods -l app=order-worker -o jsonpath='{.items[0].metadata.name}')
+kubectl logs "$pod" --previous                       # ERROR: QUEUE_URL is not set
+kubectl describe pod "$pod" | grep -A5 'Last State'  # Exit Code: 3
+cat /home/user/causes.txt
+
+cat > /home/user/diagnosis.txt <<'END'
+pod_status=CrashLoopBackOff
+exit_code=3
+root_cause=C2
+END
+
+kubectl describe configmap order-worker-config
+kubectl set env deployment/order-worker --from=configmap/order-worker-config
+kubectl rollout status deployment/order-worker
+kubectl logs deploy/order-worker                     # worker started
+```
+
+The root cause ID depends on the order in `causes.txt`: choose the one that says a required environment variable is missing.
+
+APPROACH
+========
+1. `kubectl get pods`, then `kubectl logs <pod> --previous` and `kubectl describe pod <pod>`.
+2. Note the status, the exit code under "Last State", and the missing setting from the log.
+3. Match it to `causes.txt` and write `diagnosis.txt`.
+4. Add the setting from the ConfigMap with `kubectl set env --from=configmap/...` or by editing the Deployment (`envFrom` or `valueFrom.configMapKeyRef`).
+5. `kubectl rollout status deployment/order-worker`, then `kubectl logs deploy/order-worker`.
+
+HINT
+====
+- `kubectl get pods` shows the status and RESTARTS; `kubectl describe pod` shows "Last State: Terminated" with the exit code.
+- The log line names an environment variable. `kubectl describe configmap order-worker-config` shows which keys exist.
+- `kubectl set env deployment/order-worker --from=configmap/order-worker-config` adds every key as an environment variable, taken from the ConfigMap.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cause=$(grep 'environment variable' /home/user/causes.txt | cut -d: -f1)
+printf 'pod_status=CrashLoopBackOff\nexit_code=3\nroot_cause=%s\n' "$cause" > /home/user/diagnosis.txt
+kubectl set env deployment/order-worker --from=configmap/order-worker-config
+kubectl rollout status deployment/order-worker --timeout=300s
+sleep 5

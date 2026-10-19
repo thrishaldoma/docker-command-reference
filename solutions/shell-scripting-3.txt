@@ -1,0 +1,127 @@
+Topic: Shell Scripting
+Topic ID: shell-scripting
+Question: 3
+Title: Count Files and Directories
+Lab ID: shell-count-entries
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/03-shell-scripting/03-count-entries
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Write a script that reports how many files and subdirectories a directory contains, and that handles bad input politely. Scripts like this are the building blocks of cleanup and audit jobs.
+
+## Tasks
+
+Create the script `/home/user/scripts/count.sh`. It takes exactly one argument, a directory path:
+
+```
+bash /home/user/scripts/count.sh /some/directory
+```
+
+### Task 1: Count the entries
+
+For a valid directory, print exactly two lines to standard output and exit with status `0`:
+
+```
+Files: <number of regular files>
+Directories: <number of subdirectories>
+```
+
+Count only the entries **directly inside** the directory (do not count recursively), and **include hidden** entries (names that start with a dot). Do not count the special entries `.` and `..`.
+
+### Task 2: Handle a missing argument
+
+When the script is run with no argument, or with more than one argument, print this line to standard error and exit with status `1`:
+
+```
+Usage: count.sh <directory>
+```
+
+### Task 3: Handle an invalid directory
+
+When the argument does not exist or is not a directory, print this line to standard error and exit with status `2` (with the argument in place of `<path>`):
+
+```
+Error: <path> is not a directory
+```
+
+## Notes
+
+- The checker runs your script with `bash` as the user `user`, against several directories, including an empty one and one with names that contain spaces.
+- Make the script executable too, so it can also be run as `./count.sh`.
+
+## Expected outcome
+
+`count.sh` prints correct counts for any directory and fails with the exact messages and exit codes for bad input.
+
+ANSWER
+======
+```bash
+mkdir -p /home/user/scripts
+cat > /home/user/scripts/count.sh <<'END'
+#!/bin/bash
+# Counts regular files and subdirectories directly inside a directory.
+
+if [ "$#" -ne 1 ]; then
+  echo "Usage: count.sh <directory>" >&2
+  exit 1
+fi
+
+dir=$1
+if [ ! -d "$dir" ]; then
+  echo "Error: $dir is not a directory" >&2
+  exit 2
+fi
+
+files=$(find "$dir" -mindepth 1 -maxdepth 1 -type f | wc -l)
+dirs=$(find "$dir" -mindepth 1 -maxdepth 1 -type d | wc -l)
+echo "Files: $files"
+echo "Directories: $dirs"
+END
+chmod +x /home/user/scripts/count.sh
+/home/user/scripts/count.sh /home/user
+```
+
+APPROACH
+========
+1. Start with `#!/bin/bash`.
+2. Check `$#`: if it is not 1, print the usage line to standard error and `exit 1`.
+3. Check that `"$1"` is a directory: if not, print the error line to standard error and `exit 2`.
+4. Count files and directories with `find -mindepth 1 -maxdepth 1` and `-type f` / `-type d`, then `wc -l`.
+5. Print the two lines with `echo "Files: $files"` and `echo "Directories: $dirs"`.
+6. Test it on your home directory, an empty directory, a file and with no argument. Check exit codes with `echo $?`.
+
+HINT
+====
+- `$#` is the number of arguments and `$1` is the first one.
+- `[ -d "$1" ]` tests for a directory. Always quote `"$1"` so paths with spaces work.
+- `find "$dir" -mindepth 1 -maxdepth 1 -type f | wc -l` counts regular files directly inside `dir`, hidden ones included. Use `-type d` for directories.
+- `echo "message" >&2` prints to standard error, and `exit 1` sets the exit status.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cat > /home/user/scripts/count.sh <<'END'
+#!/bin/bash
+if [ "$#" -ne 1 ]; then
+  echo "Usage: count.sh <directory>" >&2
+  exit 1
+fi
+dir=$1
+if [ ! -d "$dir" ]; then
+  echo "Error: $dir is not a directory" >&2
+  exit 2
+fi
+files=$(find "$dir" -mindepth 1 -maxdepth 1 -type f | wc -l)
+dirs=$(find "$dir" -mindepth 1 -maxdepth 1 -type d | wc -l)
+echo "Files: $files"
+echo "Directories: $dirs"
+END
+chmod +x /home/user/scripts/count.sh

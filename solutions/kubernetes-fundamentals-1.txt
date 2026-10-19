@@ -1,0 +1,132 @@
+Topic: Kubernetes Fundamentals
+Topic ID: kubernetes-fundamentals
+Question: 1
+Title: Explore a Kubernetes Cluster
+Lab ID: k8s-explore-cluster
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/08-kubernetes-fundamentals/01-explore-cluster
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+A fresh Kubernetes cluster (k3s) is running for you, and `kubectl` in this terminal is already connected to it. Before deploying anything, get to know the cluster: its nodes, namespaces and the resources that are already running. Record what you find and the commands you used.
+
+## Tasks
+
+### Task 1: Inspect the cluster
+
+Use `kubectl` to find:
+
+- the name of the node and its Kubernetes version
+- the internal IP address of the node
+- the names of all namespaces
+- how many pods run in the `kube-system` namespace
+- the name of the default storage class
+- the address of the API server that `kubectl` talks to
+
+### Task 2: Record the facts
+
+Create `/home/user/cluster-facts.txt` with exactly these lines:
+
+```
+node_name=<name of the node>
+kubernetes_version=<version shown for the node, for example v1.30.0+k3s1>
+node_ip=<internal IP of the node>
+namespaces=<all namespace names, comma separated, in alphabetical order>
+kube_system_pods=<number of pods in kube-system>
+default_storage_class=<name of the default storage class>
+api_server=<API server URL, for example https://example:6443>
+```
+
+### Task 3: Record the commands
+
+Create `/home/user/cluster-commands.txt` with the commands you used:
+
+```
+nodes_command=<command that lists the nodes with their IP addresses>
+namespaces_command=<command that lists the namespaces>
+pods_command=<command that lists the pods in kube-system>
+cluster_info_command=<command that shows the API server address>
+```
+
+## Notes
+
+- Count every pod in `kube-system`, including completed ones.
+- `kubectl` commands do not need `sudo` here.
+
+## Expected outcome
+
+Two files that describe the cluster and how you explored it.
+
+ANSWER
+======
+```bash
+kubectl get nodes -o wide
+kubectl get namespaces
+kubectl get pods -n kube-system
+kubectl get storageclass
+kubectl cluster-info
+```
+
+Fill the files from the output (values below are an example of their shape):
+
+```bash
+cat > /home/user/cluster-facts.txt <<END
+node_name=k3s
+kubernetes_version=$(kubectl get node k3s -o jsonpath='{.status.nodeInfo.kubeletVersion}')
+node_ip=$(kubectl get node k3s -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')
+namespaces=$(kubectl get ns -o name | cut -d/ -f2 | sort | paste -sd, -)
+kube_system_pods=$(kubectl get pods -n kube-system --no-headers | wc -l)
+default_storage_class=local-path
+api_server=https://k3s:6443
+END
+
+cat > /home/user/cluster-commands.txt <<'END'
+nodes_command=kubectl get nodes -o wide
+namespaces_command=kubectl get namespaces
+pods_command=kubectl get pods -n kube-system
+cluster_info_command=kubectl cluster-info
+END
+```
+
+APPROACH
+========
+1. Run `kubectl get nodes -o wide` and note the name, version and internal IP.
+2. Run `kubectl get ns` and sort the names.
+3. Count the pods in `kube-system`.
+4. Run `kubectl get storageclass` and `kubectl cluster-info`.
+5. Write both files with `nano`.
+
+HINT
+====
+- `kubectl get nodes -o wide` shows the version and internal IP of each node.
+- `kubectl get namespaces` (short: `kubectl get ns`) lists namespaces.
+- `kubectl get pods -n kube-system` lists pods in one namespace. `--no-headers | wc -l` counts them.
+- `kubectl get storageclass` marks the default one with "(default)".
+- `kubectl cluster-info` prints the API server address.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+node=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')
+cat > /home/user/cluster-facts.txt <<END
+node_name=$node
+kubernetes_version=$(kubectl get node "$node" -o jsonpath='{.status.nodeInfo.kubeletVersion}')
+node_ip=$(kubectl get node "$node" -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}')
+namespaces=$(kubectl get ns -o name | cut -d/ -f2 | sort | paste -sd, -)
+kube_system_pods=$(kubectl get pods -n kube-system --no-headers | wc -l)
+default_storage_class=$(kubectl get storageclass -o jsonpath='{.items[?(@.metadata.annotations.storageclass\.kubernetes\.io/is-default-class=="true")].metadata.name}')
+api_server=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
+END
+cat > /home/user/cluster-commands.txt <<'END'
+nodes_command=kubectl get nodes -o wide
+namespaces_command=kubectl get namespaces
+pods_command=kubectl get pods -n kube-system
+cluster_info_command=kubectl cluster-info
+END

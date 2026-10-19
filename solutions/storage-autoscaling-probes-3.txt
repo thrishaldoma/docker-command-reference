@@ -1,0 +1,178 @@
+Topic: Storage, Autoscaling and Probes
+Topic ID: storage-autoscaling-probes
+Question: 3
+Title: Autoscale with a HorizontalPodAutoscaler
+Lab ID: k8s-hpa
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/12-storage-autoscaling-probes/03-hpa
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+A **HorizontalPodAutoscaler** (HPA) adds and removes replicas of a Deployment based on measured CPU use. It only works when two things are in place, and finding out which is part of this lab. You will configure an HPA, put load on the application and watch the HPA react.
+
+## Tasks
+
+### Task 1: Deploy the application with CPU requests
+
+Create a Deployment named `cpu-app` with `1` replica, image `stefanprodan/podinfo:6.15.0`, container name `podinfo`, container port `9898`, and these resources:
+
+- CPU request `50m`, CPU limit `200m`
+
+Create a Service named `cpu-app` (port `80`, target port `9898`) for it.
+
+### Task 2: Create the autoscaler
+
+Create an HPA named `cpu-app-hpa` for the Deployment `cpu-app`:
+
+- minimum `1` replica, maximum `4` replicas
+- target average CPU utilization `50` percent
+
+### Task 3: Generate load and observe
+
+Start a load generator Pod named `load-generator`:
+
+```
+kubectl run load-generator --image=busybox:1.38.0 --restart=Never -- /bin/sh -c "while true; do wget -q -O- http://cpu-app/; done"
+```
+
+Watch the HPA with `kubectl get hpa cpu-app-hpa -w`. Within a minute or two the TARGETS column shows a real CPU percentage instead of `<unknown>`, and the replica count may start to rise. Save one line of that output, while it shows a CPU percentage, to `/home/user/hpa/observed.txt`:
+
+```
+kubectl get hpa cpu-app-hpa > /home/user/hpa/observed.txt
+```
+
+### Task 4: Document the prerequisites
+
+`/home/user/hpa/statements.txt` lists numbered statements about what an HPA needs. Create `/home/user/hpa/prerequisites.txt` with the IDs of the **two** statements that describe real prerequisites for CPU-based autoscaling, comma separated, for example `P1,P2`.
+
+## Notes
+
+- The `hpa` folder already contains `statements.txt`.
+- You may delete the load generator when you are done; the checker does not need it.
+
+## Expected outcome
+
+`cpu-app` has CPU requests, `cpu-app-hpa` reads its CPU utilization, your saved output shows a measured percentage, and the prerequisites are identified.
+
+ANSWER
+======
+```bash
+mkdir -p /home/user/hpa && cd /home/user/hpa
+cat <<'END' | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpu-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cpu-app
+  template:
+    metadata:
+      labels:
+        app: cpu-app
+    spec:
+      containers:
+        - name: podinfo
+          image: stefanprodan/podinfo:6.15.0
+          ports:
+            - containerPort: 9898
+          resources:
+            requests:
+              cpu: 50m
+            limits:
+              cpu: 200m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpu-app
+spec:
+  selector:
+    app: cpu-app
+  ports:
+    - port: 80
+      targetPort: 9898
+END
+kubectl autoscale deployment cpu-app --name=cpu-app-hpa --min=1 --max=4 --cpu-percent=50
+kubectl run load-generator --image=busybox:1.38.0 --restart=Never -- /bin/sh -c "while true; do wget -q -O- http://cpu-app/; done"
+kubectl get hpa cpu-app-hpa -w            # wait until TARGETS shows cpu: NN%/50%
+kubectl get hpa cpu-app-hpa > observed.txt
+kubectl delete pod load-generator
+```
+
+The two prerequisites are: a running **metrics-server** (it supplies the CPU measurements through the metrics API), and **CPU requests** on the containers (utilization is a percentage of the request). Pick the statements that say this, for example `P2,P5` (your IDs differ).
+
+APPROACH
+========
+1. Write the Deployment with resources and the Service, apply them.
+2. Create the HPA with `kubectl autoscale` or an `autoscaling/v2` manifest.
+3. Start the load generator and watch the HPA. `kubectl describe hpa cpu-app-hpa` explains what it is doing.
+4. Save the HPA line once a percentage shows.
+5. Think about which components and settings the HPA used to compute that percentage, then pick the two statements.
+
+HINT
+====
+- `kubectl autoscale deployment cpu-app --name=cpu-app-hpa --min=1 --max=4 --cpu-percent=50`
+- Resources go under the container: `resources: {requests: {cpu: 50m}, limits: {cpu: 200m}}`.
+- The HPA computes utilization as a percentage of the CPU **request**. Where do the CPU numbers themselves come from? Try `kubectl top pods`.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/hpa
+cat <<END | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpu-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cpu-app
+  template:
+    metadata:
+      labels:
+        app: cpu-app
+    spec:
+      containers:
+        - name: podinfo
+          image: $IMAGE_PODINFO
+          ports:
+            - containerPort: 9898
+          resources:
+            requests:
+              cpu: 50m
+            limits:
+              cpu: 200m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cpu-app
+spec:
+  selector:
+    app: cpu-app
+  ports:
+    - port: 80
+      targetPort: 9898
+END
+kubectl rollout status deployment/cpu-app --timeout=300s
+kubectl autoscale deployment cpu-app --name=cpu-app-hpa --min=1 --max=4 --cpu-percent=50
+kubectl run load-generator --image="$IMAGE_BUSYBOX" --restart=Never -- /bin/sh -c "while true; do wget -q -O- http://cpu-app/; done"
+for _ in $(seq 1 90); do
+  kubectl get hpa cpu-app-hpa > observed.txt
+  grep -qE '[0-9]+%/50%' observed.txt && break
+  sleep 3
+done
+grep -E 'metrics-server|CPU requests' statements.txt | cut -d: -f1 | paste -sd, - > prerequisites.txt
+kubectl delete pod load-generator --wait=false

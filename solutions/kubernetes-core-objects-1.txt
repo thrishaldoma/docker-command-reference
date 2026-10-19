@@ -1,0 +1,135 @@
+Topic: Kubernetes Core Objects
+Topic ID: kubernetes-core-objects
+Question: 1
+Title: Create and Inspect a Pod
+Lab ID: k8s-pod
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/09-kubernetes-core-objects/01-pod
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+The Pod is the smallest thing Kubernetes runs. Create one from a YAML manifest, then inspect its status, labels, IP address and logs.
+
+## Tasks
+
+### Task 1: Write the manifest
+
+Create `/home/user/pod/nginx-pod.yaml` that defines a Pod with:
+
+- name: `nginx-pod`
+- labels: `app: web` and `tier: frontend`
+- one container named `nginx` with image `nginx:1.30.6-alpine` and container port `80`
+
+### Task 2: Create the Pod
+
+Create it with `kubectl apply -f` and wait until it is `Running`.
+
+### Task 3: Generate some logs
+
+Make at least one HTTP request to the Pod so it writes an access log line. You can, for example, use `kubectl port-forward` and `curl`, or run `kubectl exec nginx-pod -- curl -s localhost`.
+
+### Task 4: Record what you see
+
+Create `/home/user/pod/pod-info.txt` with:
+
+```
+status=<the Pod's phase, as shown in the STATUS column>
+ip=<the Pod's IP address>
+node=<the node it runs on>
+labels=<its labels as key=value pairs, comma separated, sorted by key>
+```
+
+Save its logs to `/home/user/pod/nginx-pod.log`.
+
+## Notes
+
+- Leave the Pod running when you submit.
+
+## Expected outcome
+
+A running Pod `nginx-pod` with the two labels, a file describing its status, IP, node and labels, and its logs containing your request.
+
+ANSWER
+======
+```bash
+mkdir -p /home/user/pod
+cat > /home/user/pod/nginx-pod.yaml <<'END'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: web
+    tier: frontend
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.30.6-alpine
+      ports:
+        - containerPort: 80
+END
+kubectl apply -f /home/user/pod/nginx-pod.yaml
+kubectl wait --for=condition=Ready pod/nginx-pod --timeout=120s
+kubectl exec nginx-pod -- curl -s localhost >/dev/null
+kubectl get pod nginx-pod -o wide --show-labels
+
+cat > /home/user/pod/pod-info.txt <<END
+status=Running
+ip=$(kubectl get pod nginx-pod -o jsonpath='{.status.podIP}')
+node=$(kubectl get pod nginx-pod -o jsonpath='{.spec.nodeName}')
+labels=app=web,tier=frontend
+END
+kubectl logs nginx-pod > /home/user/pod/nginx-pod.log
+```
+
+APPROACH
+========
+1. `mkdir -p /home/user/pod` and write the manifest with `nano`.
+2. `kubectl apply -f /home/user/pod/nginx-pod.yaml` and `kubectl get pod nginx-pod -w` until Running (Ctrl+C to stop watching).
+3. In a second terminal tab run `kubectl port-forward pod/nginx-pod 8080:80`, and in the first run `curl localhost:8080`.
+4. `kubectl get pod nginx-pod -o wide --show-labels`, then write `pod-info.txt`.
+5. `kubectl logs nginx-pod > /home/user/pod/nginx-pod.log`
+
+HINT
+====
+- A Pod manifest has `apiVersion: v1`, `kind: Pod`, `metadata` (name, labels) and `spec.containers`.
+- `kubectl get pod nginx-pod -o wide --show-labels` shows status, IP, node and labels in one line.
+- `kubectl port-forward pod/nginx-pod 8080:80` makes the Pod reachable at `localhost:8080` while it runs. Press Ctrl+C to stop it.
+- `kubectl logs nginx-pod > file` saves the logs.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+mkdir -p /home/user/pod
+cat > /home/user/pod/nginx-pod.yaml <<END
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: web
+    tier: frontend
+spec:
+  containers:
+    - name: nginx
+      image: $IMAGE_NGINX
+      ports:
+        - containerPort: 80
+END
+kubectl apply -f /home/user/pod/nginx-pod.yaml
+kubectl wait --for=condition=Ready pod/nginx-pod --timeout=300s
+kubectl exec nginx-pod -- curl -s localhost >/dev/null
+cat > /home/user/pod/pod-info.txt <<END
+status=$(kubectl get pod nginx-pod -o jsonpath='{.status.phase}')
+ip=$(kubectl get pod nginx-pod -o jsonpath='{.status.podIP}')
+node=$(kubectl get pod nginx-pod -o jsonpath='{.spec.nodeName}')
+labels=app=web,tier=frontend
+END
+kubectl logs nginx-pod > /home/user/pod/nginx-pod.log

@@ -1,0 +1,114 @@
+Topic: Terraform
+Topic ID: terraform
+Question: 3
+Title: Plans, State and What Not to Commit
+Lab ID: terraform-state-changes
+Environment: terraform
+Add-ons: none
+Source: /opt/devops-labs/labs/17-terraform/03-state-and-changes
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Terraform remembers what it created in its **state**. The state maps each resource address in your configuration (such as `local_file.report`) to a real object, which is how Terraform knows whether to create, update, replace or leave something alone. In this lab you change a resource, read the plan before applying it, connect what you see to the state, and keep the state and secrets out of Git.
+
+The project `/home/user/tf/inventory` is a Git repository with a configuration that has already been applied. It also contains `secrets.auto.tfvars`, which holds an API token.
+
+## Tasks
+
+### Task 1: Inspect the current state
+
+Run `terraform state list` and save its output to `/home/user/tf/inventory/state-before.txt`.
+
+### Task 2: Change a resource and read the plan
+
+In `main.tf`, change the content of the `local_file.report` resource from `inventory report v1` to `inventory report v2` (keep the newline). Run `terraform plan` and save the plan output (with `-no-color`) to `/home/user/tf/inventory/plan.txt`. Read it before you go on.
+
+### Task 3: Explain what you saw
+
+Create `/home/user/tf/inventory/explain.txt` with:
+
+```
+report_action=<what the plan does to local_file.report: create, update, replace or delete>
+port_action=<what it does to random_integer.port: create, update, replace, delete or no-op>
+state_file=<the name of the file where Terraform stores the state here>
+resources_in_state=<how many resources the state tracks>
+```
+
+### Task 4: Apply
+
+Apply the change. The value of `random_integer.port` must stay the same.
+
+### Task 5: Keep state and secrets out of Git
+
+Create a `.gitignore` that excludes the state files (`*.tfstate` and `*.tfstate.*`), the `.terraform/` folder and `secrets.auto.tfvars`. Commit your configuration change and the `.gitignore`. The repository must not contain any state file, the `.terraform/` folder or the secrets file.
+
+## Notes
+
+- The state file contains every attribute of your resources, including sensitive values, which is one reason it must never be committed.
+
+## Expected outcome
+
+The report file was replaced with the new content, the port kept its value, your explanation matches the plan, and Git tracks the configuration but no state or secrets.
+
+ANSWER
+======
+```bash
+cd /home/user/tf/inventory
+terraform state list > state-before.txt
+sed -i 's/inventory report v1/inventory report v2/' main.tf
+terraform plan -no-color > plan.txt      # local_file.report must be replaced (-/+), 1 to add, 1 to destroy
+
+cat > explain.txt <<'END'
+report_action=replace
+port_action=no-op
+state_file=terraform.tfstate
+resources_in_state=2
+END
+
+terraform apply -auto-approve
+
+cat > .gitignore <<'END'
+*.tfstate
+*.tfstate.*
+.terraform/
+secrets.auto.tfvars
+END
+git status
+git add main.tf .gitignore
+git commit -m "Update the inventory report"
+git ls-files
+```
+
+APPROACH
+========
+1. `cd /home/user/tf/inventory`, then `terraform state list > state-before.txt`.
+2. Edit `main.tf` with `nano`, then `terraform plan -no-color > plan.txt` and read it.
+3. Write `explain.txt` from what the plan says.
+4. `terraform apply`, then compare `terraform state show random_integer.port` with before.
+5. Write `.gitignore`, check `git status`, and commit only `main.tf` and `.gitignore`.
+
+HINT
+====
+- In a plan, `-/+` means destroy and then create again (replace), `~` means update in place, and resources that do not change are not listed.
+- `local_file` cannot edit a file in place: changing `content` forces a replacement.
+- With local state, the file is `terraform.tfstate` in the working directory.
+- `git status --ignored` shows which files are ignored.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd /home/user/tf/inventory
+terraform state list > state-before.txt
+sed -i 's/inventory report v1/inventory report v2/' main.tf
+terraform plan -input=false -no-color > plan.txt
+printf 'report_action=replace\nport_action=no-op\nstate_file=terraform.tfstate\nresources_in_state=2\n' > explain.txt
+terraform apply -input=false -auto-approve >/dev/null
+printf '*.tfstate\n*.tfstate.*\n.terraform/\nsecrets.auto.tfvars\n' > .gitignore
+git add main.tf .gitignore
+git commit -qm "Update the inventory report"

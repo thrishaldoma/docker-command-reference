@@ -1,0 +1,116 @@
+Topic: Docker Networking and Volumes
+Topic ID: docker-networking-volumes
+Question: 2
+Title: Persist Database Data with a Named Volume
+Lab ID: docker-named-volume
+Environment: docker
+Add-ons: none
+Source: /opt/devops-labs/labs/07-docker-networking-volumes/02-named-volume
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+A container's own file system disappears when the container is removed. Databases therefore keep their data in a **volume** that outlives the container. You will prove this: store data in PostgreSQL, throw the container away, start a new one with the same volume, and find the data still there.
+
+## Tasks
+
+### Task 1: Create a named volume
+
+Create a volume named `pgdata`.
+
+### Task 2: Run the database
+
+Run a PostgreSQL container in the background:
+
+- name: `db`
+- image: `postgres:18.6-alpine`
+- environment variable `POSTGRES_PASSWORD=lab@123`
+- the volume `pgdata` mounted at `/var/lib/postgresql`
+
+### Task 3: Create sample data
+
+When the database is ready, run this SQL in it as the `postgres` user:
+
+```sql
+CREATE TABLE students (id serial PRIMARY KEY, name text NOT NULL, created_at timestamptz DEFAULT now());
+INSERT INTO students (name) VALUES ('Ada'), ('Linus'), ('Grace');
+```
+
+### Task 4: Remove and recreate the container
+
+Remove the `db` container completely (not just stop it). Then start a new container named `db` with exactly the same settings as in Task 2.
+
+### Task 5: Verify persistence
+
+Check that the data survived, and save the number of rows to `/home/user/student-count.txt`:
+
+```
+docker exec db psql -U postgres -tAc 'SELECT count(*) FROM students' > /home/user/student-count.txt
+```
+
+## Notes
+
+- PostgreSQL needs a few seconds to start. `docker logs db` shows "database system is ready to accept connections" when it is ready.
+- Leave the new `db` container running when you submit.
+
+## Expected outcome
+
+A running `db` container, created after the data was inserted, that still has the three students in the `students` table, stored in the `pgdata` volume.
+
+ANSWER
+======
+```bash
+docker volume create pgdata
+docker run -d --name db -e POSTGRES_PASSWORD=lab@123 -v pgdata:/var/lib/postgresql postgres:18.6-alpine
+until docker exec db pg_isready -U postgres; do sleep 1; done
+
+docker exec -i db psql -U postgres <<'SQL'
+CREATE TABLE students (id serial PRIMARY KEY, name text NOT NULL, created_at timestamptz DEFAULT now());
+INSERT INTO students (name) VALUES ('Ada'), ('Linus'), ('Grace');
+SQL
+
+docker rm -f db
+docker run -d --name db -e POSTGRES_PASSWORD=lab@123 -v pgdata:/var/lib/postgresql postgres:18.6-alpine
+until docker exec db pg_isready -U postgres; do sleep 1; done
+
+docker exec db psql -U postgres -tAc 'SELECT count(*) FROM students' > /home/user/student-count.txt
+cat /home/user/student-count.txt     # 3
+```
+
+APPROACH
+========
+1. Create the volume, then start `db` with `docker run -d`, the password variable and `-v pgdata:/var/lib/postgresql`.
+2. Wait for the "ready to accept connections" log line.
+3. Run the SQL with `docker exec -it db psql -U postgres` (paste both statements) and check with `SELECT * FROM students;`.
+4. Remove the container with `docker rm -f db` and run the same `docker run` command again.
+5. Wait until it is ready, then run the count query and save it to the file.
+
+HINT
+====
+- `docker volume create pgdata`
+- `-v pgdata:/var/lib/postgresql` mounts the named volume into the container.
+- `docker exec -it db psql -U postgres` opens an SQL prompt inside the container. Type `\q` to leave.
+- `docker rm -f db` stops and removes the container, but not the volume.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+ready() { for _ in $(seq 1 60); do docker exec db pg_isready -U postgres >/dev/null 2>&1 && return 0; sleep 1; done; return 1; }
+docker volume create pgdata >/dev/null
+docker run -d --name db -e POSTGRES_PASSWORD=lab@123 -v pgdata:/var/lib/postgresql "$IMAGE_POSTGRES" >/dev/null
+ready
+sleep 2
+docker exec -i db psql -q -U postgres <<'SQL'
+CREATE TABLE students (id serial PRIMARY KEY, name text NOT NULL, created_at timestamptz DEFAULT now());
+INSERT INTO students (name) VALUES ('Ada'), ('Linus'), ('Grace');
+SQL
+docker rm -f db >/dev/null
+docker run -d --name db -e POSTGRES_PASSWORD=lab@123 -v pgdata:/var/lib/postgresql "$IMAGE_POSTGRES" >/dev/null
+ready
+sleep 2
+docker exec db psql -U postgres -tAc 'SELECT count(*) FROM students' > /home/user/student-count.txt

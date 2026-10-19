@@ -1,0 +1,89 @@
+Topic: Shell Scripting
+Topic ID: shell-scripting
+Question: 2
+Title: Your First Documented Script
+Lab ID: shell-system-info
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/03-shell-scripting/02-system-info
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+You are tasked with creating your first shell script that follows company standards for structure and documentation. This exercise will help you practice script creation, permissions, shebang usage, and adding proper documentation for maintainability.
+
+## Instructions
+
+1. **Create the Script File:** create an empty file named `system_info.sh` in your home directory (`~/`, which is `/home/user`).
+2. **Make it Executable:** modify the file's permissions so it can be executed as a program.
+3. **Add the Shebang:** at the very top of the script, add the correct shebang line to specify the bash interpreter.
+4. **Add Documentation:** include header comments in the script with the following fields, each on its own line and each with a value:
+   - `Author:`
+   - `Version:`
+   - `Description:`
+5. **Add a Command:** insert a simple command that prints `System Information Report`.
+
+## Important Notes
+
+- The shebang must always be the first line of the script.
+- Use `chmod` to make the file executable.
+- Header comments should start with `#` and clearly describe the script, for example `# Author: Jane Doe`.
+- Keep the script simple, clean, and easy to read for other team members.
+- The checker runs the script as `./system_info.sh` from your home directory, so the execute permission matters.
+
+## Outcome
+
+By completing this task, you will be able to:
+
+- Create a properly structured shell script.
+- Understand the importance of the shebang line.
+- Apply correct file permissions for execution.
+- Document scripts according to organizational standards.
+
+ANSWER
+======
+```bash
+cd ~
+touch system_info.sh
+chmod +x system_info.sh
+cat > system_info.sh <<'END'
+#!/bin/bash
+# Author: Jane Doe
+# Version: 1.0
+# Description: Prints a system information report header.
+echo "System Information Report"
+END
+./system_info.sh
+```
+
+APPROACH
+========
+1. `cd ~` and create the file with `touch system_info.sh`.
+2. Make it executable with `chmod +x system_info.sh` and check with `ls -l`.
+3. Open it with `nano` and add the shebang, three comment lines (`# Author: ...`, `# Version: ...`, `# Description: ...`) and an `echo` line.
+4. Run it with `./system_info.sh`.
+
+HINT
+====
+- `touch` creates an empty file and `chmod +x` makes it executable.
+- The bash shebang is `#!/bin/bash` (or `#!/usr/bin/env bash`).
+- Comment lines start with `#`. Put the three fields right after the shebang.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+cd ~
+touch system_info.sh
+chmod +x system_info.sh
+cat > system_info.sh <<'END'
+#!/bin/bash
+# Author: Lab Self-Test
+# Version: 1.0
+# Description: Prints a system information report header.
+echo "System Information Report"
+END

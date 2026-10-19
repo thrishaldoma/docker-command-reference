@@ -1,0 +1,65 @@
+Topic: Shell Scripting
+Topic ID: shell-scripting
+Question: 1
+Title: Hello, World!
+Lab ID: shell-hello-world
+Environment: base
+Add-ons: none
+Source: /opt/devops-labs/labs/03-shell-scripting/01-hello-world
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Hello, World!
+
+Your task is to write a simple shell script named `solution.sh` at `/home/user` that prints:
+
+```
+Hello, World!
+```
+
+This is your very first shell script, think of it like the first song in your playlist.
+
+## Requirements
+
+1. The script must be saved as `/home/user/solution.sh`.
+2. The script must start with the correct shebang line.
+3. It should output exactly `Hello, World!` with no extra whitespace or formatting.
+
+## Notes
+
+- The checker runs your script with `bash /home/user/solution.sh`.
+- Mind the comma and the exclamation mark.
+
+## Expected outcome
+
+Running the script prints exactly `Hello, World!` and nothing else.
+
+ANSWER
+======
+```bash
+cat > /home/user/solution.sh <<'END'
+#!/bin/bash
+echo "Hello, World!"
+END
+bash /home/user/solution.sh
+```
+
+APPROACH
+========
+1. Open the file with `nano /home/user/solution.sh`.
+2. Write the shebang on the first line and an `echo` command on the second.
+3. Save, then run `bash /home/user/solution.sh` and compare the output.
+
+HINT
+====
+- A shebang is the first line of a script and starts with `#!`, for example `#!/bin/bash`.
+- `echo` prints text. Quote the text so the shell does not treat `!` specially.
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+printf '#!/bin/bash\necho "Hello, World!"\n' > /home/user/solution.sh

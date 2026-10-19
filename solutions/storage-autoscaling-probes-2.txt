@@ -1,0 +1,246 @@
+Topic: Storage, Autoscaling and Probes
+Topic ID: storage-autoscaling-probes
+Question: 2
+Title: Readiness and Liveness Probes
+Lab ID: k8s-probes
+Environment: kubernetes
+Add-ons: none
+Source: /opt/devops-labs/labs/12-storage-autoscaling-probes/02-probes
+Extracted: 2026-10-19
+Run the answer in this lab after starting its session in DevOps Labs.
+The script appendix requires the original lab runner environment.
+
+QUESTION
+========
+## Objective
+
+Kubernetes uses **probes** to check containers. A failing **readiness** probe takes a Pod out of its Service, so it gets no traffic, but leaves it running. A failing **liveness** probe makes the kubelet restart the container. You will configure both and watch how Kubernetes reacts when an application stops being ready or becomes unhealthy.
+
+## Tasks
+
+### Task 1: Readiness and liveness for a web app
+
+Create a Deployment named `probe-demo` with `2` replicas, image `stefanprodan/podinfo:6.15.0`, container name `podinfo`, container port `9898`, and:
+
+- a **readiness** probe: HTTP GET on path `/readyz`, port `9898`, every `3` seconds
+- a **liveness** probe: HTTP GET on path `/healthz`, port `9898`, every `5` seconds
+
+Create a Service named `probe-svc` (port `80`, target port `9898`) for its Pods.
+
+### Task 2: Make one Pod not ready
+
+podinfo can be told to report itself as not ready. Pick **one** `probe-demo` Pod and run:
+
+```
+kubectl exec <pod name> -- wget -qO- --post-data='' http://localhost:9898/readyz/disable
+```
+
+Watch it with `kubectl get pods` until its READY column shows `0/1`, and check that it disappears from the endpoints of `probe-svc`. Write the name of that Pod to `/home/user/probes/not-ready-pod.txt`. Leave it in this state.
+
+### Task 3: A liveness probe that restarts a container
+
+Create a Deployment named `liveness-demo` with `1` replica, image `busybox:1.38.0`, container name `app`, and the command:
+
+```
+sh -c 'touch /tmp/healthy; sleep 3600'
+```
+
+Give it a liveness probe that runs the command `cat /tmp/healthy` every `5` seconds and fails after `2` failures.
+
+### Task 4: Make it unhealthy
+
+Delete the file `/tmp/healthy` in the `liveness-demo` container. Watch the RESTARTS column: the kubelet restarts the container, and the restarted container creates the file again. When the restart count is at least 1, write it to `/home/user/probes/restarts.txt`.
+
+## Notes
+
+- The `probes` folder does not exist yet.
+- `kubectl describe pod <name>` shows probe failures in the Events section.
+
+## Expected outcome
+
+One `probe-demo` Pod is running but not ready and has no traffic, the other serves `probe-svc`, and `liveness-demo` was restarted by its liveness probe.
+
+ANSWER
+======
+```bash
+mkdir -p /home/user/probes && cd /home/user/probes
+cat > probe-demo.yaml <<'END'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: probe-demo
+  template:
+    metadata:
+      labels:
+        app: probe-demo
+    spec:
+      containers:
+        - name: podinfo
+          image: stefanprodan/podinfo:6.15.0
+          ports:
+            - containerPort: 9898
+          readinessProbe:
+            httpGet: {path: /readyz, port: 9898}
+            periodSeconds: 3
+          livenessProbe:
+            httpGet: {path: /healthz, port: 9898}
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe-svc
+spec:
+  selector:
+    app: probe-demo
+  ports:
+    - port: 80
+      targetPort: 9898
+END
+kubectl apply -f probe-demo.yaml
+kubectl rollout status deployment/probe-demo
+
+pod=$(kubectl get pods -l app=probe-demo -o jsonpath='{.items[0].metadata.name}')
+kubectl exec "$pod" -- wget -qO- --post-data='' http://localhost:9898/readyz/disable
+kubectl get pods -l app=probe-demo -w        # wait for 0/1, then Ctrl+C
+kubectl get endpointslices -l kubernetes.io/service-name=probe-svc -o wide
+echo "$pod" > not-ready-pod.txt
+
+cat > liveness-demo.yaml <<'END'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: liveness-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: liveness-demo
+  template:
+    metadata:
+      labels:
+        app: liveness-demo
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.38.0
+          command: ["sh", "-c", "touch /tmp/healthy; sleep 3600"]
+          livenessProbe:
+            exec:
+              command: ["cat", "/tmp/healthy"]
+            periodSeconds: 5
+            failureThreshold: 2
+END
+kubectl apply -f liveness-demo.yaml
+kubectl rollout status deployment/liveness-demo
+kubectl exec deploy/liveness-demo -- rm /tmp/healthy
+kubectl get pods -l app=liveness-demo -w     # RESTARTS becomes 1 after about 10 seconds
+kubectl get pods -l app=liveness-demo -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}' > restarts.txt
+```
+
+APPROACH
+========
+1. Write a manifest for `probe-demo` with both probes, plus the `probe-svc` Service, and apply it.
+2. Pick one Pod name from `kubectl get pods -l app=probe-demo`, disable its readiness with the `wget` command, and wait for `0/1`.
+3. Compare the endpoints with the Pod IPs, then save the Pod name.
+4. Write and apply the `liveness-demo` manifest with the exec probe.
+5. Remove `/tmp/healthy`, watch `kubectl get pods -w` for the restart, then save the restart count.
+
+HINT
+====
+- Probes go under the container: `readinessProbe: {httpGet: {path: /readyz, port: 9898}, periodSeconds: 3}`.
+- An exec probe looks like `livenessProbe: {exec: {command: ["cat", "/tmp/healthy"]}, periodSeconds: 5, failureThreshold: 2}`.
+- `kubectl get endpointslices -l kubernetes.io/service-name=probe-svc -o wide` shows which Pod IPs receive traffic.
+- `kubectl exec deploy/liveness-demo -- rm /tmp/healthy`
+
+ORIGINAL SOLUTION SCRIPT (solve.sh)
+===================================
+#!/bin/bash
+set -euo pipefail
+mkdir -p /home/user/probes && cd /home/user/probes
+cat > probe-demo.yaml <<END
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: probe-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: probe-demo
+  template:
+    metadata:
+      labels:
+        app: probe-demo
+    spec:
+      containers:
+        - name: podinfo
+          image: $IMAGE_PODINFO
+          ports:
+            - containerPort: 9898
+          readinessProbe:
+            httpGet: {path: /readyz, port: 9898}
+            periodSeconds: 3
+          livenessProbe:
+            httpGet: {path: /healthz, port: 9898}
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: probe-svc
+spec:
+  selector:
+    app: probe-demo
+  ports:
+    - port: 80
+      targetPort: 9898
+END
+kubectl apply -f probe-demo.yaml
+kubectl rollout status deployment/probe-demo --timeout=300s
+pod=$(kubectl get pods -l app=probe-demo -o jsonpath='{.items[0].metadata.name}')
+kubectl exec "$pod" -- wget -qO- --post-data='' http://localhost:9898/readyz/disable >/dev/null
+for _ in $(seq 1 30); do
+  [ "$(kubectl get pod "$pod" -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}')" = False ] && break
+  sleep 2
+done
+echo "$pod" > not-ready-pod.txt
+cat > liveness-demo.yaml <<END
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: liveness-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: liveness-demo
+  template:
+    metadata:
+      labels:
+        app: liveness-demo
+    spec:
+      containers:
+        - name: app
+          image: $IMAGE_BUSYBOX
+          command: ["sh", "-c", "touch /tmp/healthy; sleep 3600"]
+          livenessProbe:
+            exec:
+              command: ["cat", "/tmp/healthy"]
+            periodSeconds: 5
+            failureThreshold: 2
+END
+kubectl apply -f liveness-demo.yaml
+kubectl rollout status deployment/liveness-demo --timeout=300s
+kubectl exec deploy/liveness-demo -- rm /tmp/healthy
+for _ in $(seq 1 60); do
+  n=$(kubectl get pods -l app=liveness-demo -o jsonpath='{.items[0].status.containerStatuses[0].restartCount}')
+  [ "${n:-0}" -ge 1 ] && break
+  sleep 2
+done
+echo "$n" > restarts.txt
